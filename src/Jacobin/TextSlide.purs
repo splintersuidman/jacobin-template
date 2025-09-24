@@ -105,4 +105,4 @@ main = void $ unsafePartial do
   template <- mkTemplate templateContext layers
   redraw template
   addEventListeners template
-  mkDownloadButton "button" "jacobin.png" template
+  mkDownloadButton "download" "jacobin.png" template
