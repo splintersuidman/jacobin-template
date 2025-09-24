@@ -64,7 +64,7 @@ main = void $ unsafePartial do
       , fontName: "Oswald"
       , fontStyle: "normal"
       , fontWeight: "500"
-      , fontSize: 90.0
+      , fontSize: 2.0 * 50.0
       , align: AlignLeft
       , baseline: BaselineTop
       , letterSpacing: "-3px"
@@ -78,13 +78,13 @@ main = void $ unsafePartial do
   titleLayer <- mkRefLayer $ TextLayer
     { text: "Titel"
     , lineHeight: 0.9
-    , position: { x: 2.0*60.0, y: templateDimensions.height - 2.0*200.0 + 2.0*49.5 }
+    , position: { x: 2.0*60.0, y: templateDimensions.height - 2.0*200.0 + 2.0*50.0 }
     , maxWidth: Just $ templateDimensions.width - 4.0*2.0*60.0
     , fillStyle: "#f00"
     , fontName: "Oswald"
     , fontStyle: "normal"
     , fontWeight: "700"
-    , fontSize: 90.0
+    , fontSize: 2.0 * 50.0
     , align: AlignLeft
     , baseline: BaselineTop
     , letterSpacing: "-2px"
