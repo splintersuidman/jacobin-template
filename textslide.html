@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacobin-template: tekst</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main>
+      <canvas id="canvas"></canvas>
+      <div id="inputs">
+        <div class="label-input-pair">
+          <label>Broodtekst</label>
+          <textarea class="input" id="bodytext">Broodtekst</textarea>
+        </div>
+        <div class="label-input-pair">
+          <label>Tekstgrootte</label>
+          <input type="range" class="input" id="bodytext-size" min="100" max="250" step="1" value="180" />
+        </div>
+        <div class="label-input-pair">
+          <label>Auteur</label>
+          <input class="input" id="author" value="Auteur" />
+        </div>
+        <div class="label-input-pair">
+          <label>Titel</label>
+          <textarea class="input" id="title">Titel</textarea>
+        </div>
+        <br>
+        <button id="download">Download</button>
+      </div>
+    </main>
+    <script type="text/javascript" src="TextSlide.js"></script>
+  </body>
+</html>
