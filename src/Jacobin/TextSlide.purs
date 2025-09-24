@@ -15,7 +15,7 @@ import Template.Layer.Rectangle (mkRectangleLayer)
 import Template.Layer.Ref (mkRefLayer)
 import Template.Layer.Text (TextLayer(..), setText)
 import Template.Layer.Undraggable (mkUndraggable)
-import Template.Main (addEventListeners, connectInputPure, connectTextAreaPure, connectTextSizeSlider, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
+import Template.Main (addEventListeners, connectInputPure, connectTextAreaPure, connectTextSizeRange, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
 
 templateDimensions :: Dimensions
 templateDimensions = { width: 2.0 * 1080.0, height: 2.0 * 1080.0 * 5.0/4.0 }
@@ -54,7 +54,7 @@ main = void $ unsafePartial do
       , context: canvasContext
       }
   connectTextAreaPure templateContext "bodytext" bodyTextLayer setText
-  connectTextSizeSlider templateContext "bodytext-size" bodyTextLayer
+  connectTextSizeRange templateContext "bodytext-size" bodyTextLayer
 
   authorLayer <- mkRefLayer $ TextLayer
       { text: "AUTEUR"
@@ -105,4 +105,5 @@ main = void $ unsafePartial do
   template <- mkTemplate templateContext layers
   redraw template
   addEventListeners template
-  mkDownloadButton "download" "jacobin.png" template
+  Just _ <- mkDownloadButton "download" "jacobin.png" template
+  pure unit

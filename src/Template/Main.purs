@@ -14,7 +14,7 @@ module Template.Main
   , connectTextArea
   , connectRange
   , connectRangePure
-  , connectTextSizeSlider
+  , connectTextSizeRange
   ) where
 
 import Prelude
@@ -225,5 +225,5 @@ connectRange { document } id layer k = unsafePartial do
 connectRangePure :: forall l. TemplateContext -> String -> RefLayer l -> (Number -> l -> l) -> Effect Unit
 connectRangePure ctx id layer k = connectRange ctx id layer ((pure <<< _) <<< k)
 
-connectTextSizeSlider :: TemplateContext -> String -> RefLayer Effect TextLayer -> Effect Unit
-connectTextSizeSlider ctx id layer = connectRangePure ctx id layer TextLayer.setFontSize
+connectTextSizeRange :: TemplateContext -> String -> RefLayer TextLayer -> Effect Unit
+connectTextSizeRange ctx id layer = connectRangePure ctx id layer TextLayer.setFontSize
