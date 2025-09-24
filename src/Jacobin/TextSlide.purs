@@ -93,7 +93,7 @@ main = void $ unsafePartial do
     }
   connectTextAreaPure templateContext "title" titleLayer setText
 
-  let layers = mkUndraggable @Effect $ mkLayers @Effect
+  let layers = mkUndraggable $ mkLayers @Effect
         [ mkSomeLayer guillotine
         , mkSomeLayer logo
         , mkSomeLayer authorLayer

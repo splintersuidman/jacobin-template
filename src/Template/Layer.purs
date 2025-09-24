@@ -2,7 +2,6 @@ module Template.Layer where
 
 import Prelude
 
-import Control.Monad.Reader (ReaderT(..), lift)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Graphics.Canvas (Context2D, ScaleTransform, TranslateTransform, Dimensions)
@@ -67,5 +66,5 @@ class Scalable m l where
 scalePreserveRatio :: forall m l. Scalable m l => Number -> l -> m l
 scalePreserveRatio s = scale { scaleX: s, scaleY: s }
 
-class LayerWrapper (t :: (Type -> Type) -> Type -> Type) where
-  mapLayerWrapper :: forall m l. Monad m => (l -> m l) -> t m l -> m (t m l)
+class LayerWrapper (w :: Type -> Type) where
+  mapLayerWrapper :: forall m l. Layer m l => Monad m => (l -> m l) -> w l -> m (w l)

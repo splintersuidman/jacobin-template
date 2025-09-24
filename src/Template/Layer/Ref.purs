@@ -16,12 +16,12 @@ import Effect.Ref (modify, new, read) as Ref
 import Effect.Ref.Extra (modifyM, modifyM_) as Ref
 import Template.Layer (class Layer, class Scalable, containsPoint, drag, dragEnd, dragStart, draw, position, scale, translate)
 
-newtype RefLayer (m :: Type -> Type) l = RefLayer (Ref l)
+newtype RefLayer l = RefLayer (Ref l)
 
-mkRefLayer :: forall @m l. MonadEffect m => l -> m (RefLayer m l)
+mkRefLayer :: forall @m l. MonadEffect m => l -> m (RefLayer l)
 mkRefLayer l = RefLayer <$> liftEffect (Ref.new l)
 
-instance (MonadEffect m, Layer m l) => Layer m (RefLayer m l) where
+instance (MonadEffect m, Layer m l) => Layer m (RefLayer l) where
   position (RefLayer l) = position =<< liftEffect (Ref.read l)
   translate t (RefLayer l) = RefLayer l <$ Ref.modifyM (translate t) l
   containsPoint p (RefLayer l) = containsPoint p =<< liftEffect (Ref.read l)
@@ -30,20 +30,20 @@ instance (MonadEffect m, Layer m l) => Layer m (RefLayer m l) where
   dragEnd (RefLayer l) = RefLayer l <$ Ref.modifyM dragEnd l
   draw ctx (RefLayer l) = draw @m ctx =<< Ref.read l
 
-instance (MonadEffect m, Scalable m l) => Scalable m (RefLayer m l) where
+instance (MonadEffect m, Scalable m l) => Scalable m (RefLayer l) where
   scale s (RefLayer l) = RefLayer l <$ Ref.modifyM (scale s) l
 
-read :: forall m l. MonadEffect m => RefLayer m l -> m l
+read :: forall m l. MonadEffect m => RefLayer l -> m l
 read (RefLayer l) = liftEffect $ Ref.read l
 
-modify :: forall m l. MonadEffect m => (l -> l) -> RefLayer m l -> m l
+modify :: forall m l. MonadEffect m => (l -> l) -> RefLayer l -> m l
 modify f (RefLayer l) = liftEffect $ Ref.modify f l
 
-modify_ :: forall m l. MonadEffect m => (l -> l) -> RefLayer m l -> m Unit
+modify_ :: forall m l. MonadEffect m => (l -> l) -> RefLayer l -> m Unit
 modify_ f l = unit <$ modify f l
 
-modifyM :: forall m l. MonadEffect m => (l -> m l) -> RefLayer m l -> m l
+modifyM :: forall m l. MonadEffect m => (l -> m l) -> RefLayer l -> m l
 modifyM f (RefLayer l) = Ref.modifyM f l
 
-modifyM_ :: forall m l. MonadEffect m => (l -> m l) -> RefLayer m l -> m Unit
+modifyM_ :: forall m l. MonadEffect m => (l -> m l) -> RefLayer l -> m Unit
 modifyM_ f (RefLayer l) = Ref.modifyM_ f l

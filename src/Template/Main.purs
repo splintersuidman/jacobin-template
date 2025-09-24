@@ -79,7 +79,7 @@ mkTemplateContext canvasId dimensions = runMaybeT do
     , document
     }
 
-type Template = Template' (layer :: RefLayer Effect (SomeLayer Effect))
+type Template = Template' (layer :: RefLayer (SomeLayer Effect))
 
 mkTemplate :: forall l. Layer Effect l => TemplateContext -> l -> Effect Template
 mkTemplate templateContext layer = do
@@ -173,7 +173,7 @@ toCanvasCoordinates canvas canvasElement { x, y } = do
     , y: (y - top) * canvasHeight / offsetHeight
     }
 
-connectInput :: forall l. TemplateContext -> String -> RefLayer Effect l -> (String -> l -> Effect l) -> Effect Unit
+connectInput :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> Effect l) -> Effect Unit
 connectInput { document } id layer k = unsafePartial do
   Just element <- Dom.getElementById id $ Html.toNonElementParentNode document
   let Just inputElement = Input.fromElement element
@@ -186,10 +186,10 @@ connectInput { document } id layer k = unsafePartial do
     RefLayer.modifyM_ (k value) layer
   Event.addEventListener (EventType "input") inputListener false $ Dom.toEventTarget element
 
-connectInputPure :: forall l. TemplateContext -> String -> RefLayer Effect l -> (String -> l -> l) -> Effect Unit
+connectInputPure :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> l) -> Effect Unit
 connectInputPure ctx id layer k = connectInput ctx id layer ((pure <<< _) <<< k)
 
-connectTextArea :: forall l. TemplateContext -> String -> RefLayer Effect l -> (String -> l -> Effect l) -> Effect Unit
+connectTextArea :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> Effect l) -> Effect Unit
 connectTextArea { document } id layer k = unsafePartial do
   Just element <- Dom.getElementById id $ Html.toNonElementParentNode document
   let Just inputElement = TextArea.fromElement element
@@ -202,10 +202,10 @@ connectTextArea { document } id layer k = unsafePartial do
     RefLayer.modifyM_ (k value) layer
   Event.addEventListener (EventType "input") inputListener false $ Dom.toEventTarget element
 
-connectTextAreaPure :: forall l. TemplateContext -> String -> RefLayer Effect l -> (String -> l -> l) -> Effect Unit
+connectTextAreaPure :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> l) -> Effect Unit
 connectTextAreaPure ctx id layer k = connectTextArea ctx id layer ((pure <<< _) <<< k)
 
-connectRange :: forall l. TemplateContext -> String -> RefLayer Effect l -> (Number -> l -> Effect l) -> Effect Unit
+connectRange :: forall l. TemplateContext -> String -> RefLayer l -> (Number -> l -> Effect l) -> Effect Unit
 connectRange { document } id layer k = unsafePartial do
   Just element <- Dom.getElementById id $ Html.toNonElementParentNode document
   let Just inputElement = Input.fromElement element
@@ -222,7 +222,7 @@ connectRange { document } id layer k = unsafePartial do
       Nothing -> pure unit
   Event.addEventListener (EventType "input") inputListener false $ Dom.toEventTarget element
 
-connectRangePure :: forall l. TemplateContext -> String -> RefLayer Effect l -> (Number -> l -> l) -> Effect Unit
+connectRangePure :: forall l. TemplateContext -> String -> RefLayer l -> (Number -> l -> l) -> Effect Unit
 connectRangePure ctx id layer k = connectRange ctx id layer ((pure <<< _) <<< k)
 
 connectTextSizeSlider :: TemplateContext -> String -> RefLayer Effect TextLayer -> Effect Unit
