@@ -10,8 +10,10 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v30
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
       - id: set-matrix
         name: Generate Nix Matrix
         run: |
@@ -26,14 +28,29 @@ jobs:
     strategy:
       matrix: ${{fromJSON(needs.nix-matrix.outputs.matrix)}}
     steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v30
-      - run: nix build -L '.#${{ matrix.attr }}' --out-link result
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+      - name: Build
+        run: nix build -L '.#${{ matrix.attr }}' --out-link result
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: result
+          path: result
 
   deploy:
-    - name: Deploy
-      needs: nix-build
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./result/dist
+    name: Deploy site
+    needs: nix-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download results
+        uses: actions/download-artifact@v5
+        with:
+          name: result
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
