@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
+
+#canvas {
+    max-width: 80vw;
+    max-height: 80vh;
+    object-fit: contain;
+    touch-action: none;
+    border: 1px solid black;
+    display: block;
+}
+
+main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.label-input-pair {
+    display: flex;
+    flex-direction: column;
+}
+
+textarea.input {
+    min-height: 5em;
+}
+
+#inputs {
+    min-width: 30vw;
+}
+
+@media (min-width: 768px) {
+    #inputs {
+        margin-left: 5vw;
+    }
+}
+
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+
+    #inputs {
+        margin-top: 10vh;
+    }
+}

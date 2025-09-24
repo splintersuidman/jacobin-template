@@ -1,0 +1,141 @@
+module Template.Layer.Text
+  ( TextLayer(..)
+  , setText
+  , setFontSize
+  ) where
+
+import Prelude
+
+import Data.Array (any, concat, snoc, zip) as Array
+import Data.Array.Extra (enumerate) as Array
+import Data.Foldable (for_, maximum, foldl)
+import Data.Int (toNumber)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (joinWith) as String
+import Data.String.Utils (lines, words) as String
+import Data.Traversable (traverse)
+import Data.Tuple (Tuple(..))
+import Data.Tuple.Nested (type (/\), (/\))
+import Effect (Effect)
+import Effect.Class (class MonadEffect, liftEffect)
+import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline, fillText, setFillStyle, setFont, setTextAlign, setTextBaseline, withContext)
+import Graphics.Canvas.Extra (setLetterSpacing)
+import Graphics.Canvas.TextMetrics (measureText)
+import Template.Layer (class Layer, DragOffset, Point, dragTranslateMaybe, translatePoint)
+
+newtype TextLayer = TextLayer
+  { text :: String
+  , position :: Point
+  , maxWidth :: Maybe Number
+  , fillStyle :: String
+  , fontName :: String
+  , fontSize :: Number
+  , fontStyle :: String
+  , fontWeight :: String
+  , align :: TextAlign
+  , baseline :: TextBaseline
+  , lineHeight :: Number
+  , letterSpacing :: String
+  , dragOffset :: Maybe DragOffset
+  , context :: Context2D
+  }
+
+setText :: String -> TextLayer -> TextLayer
+setText text (TextLayer l) = TextLayer l { text = text }
+
+setFontSize :: Number -> TextLayer -> TextLayer
+setFontSize fontSize (TextLayer l) = TextLayer l { fontSize = fontSize }
+
+instance MonadEffect m => Layer m TextLayer where
+  position (TextLayer l) = pure l.position
+  translate translation (TextLayer l) = pure $ TextLayer l { position = translatePoint translation l.position }
+
+  -- TODO: take baseline into account
+  -- TODO: take direction into account (for AlignStart and AlignEnd)
+  containsPoint { x, y } (TextLayer l) = liftEffect $ withContext l.context do
+    setFillStyle l.context l.fillStyle
+    setFont l.context $ l.fontStyle <> " " <> l.fontWeight <> " " <> show l.fontSize <> "px " <> l.fontName
+    setTextBaseline l.context l.baseline
+    setTextAlign l.context l.align
+    setLetterSpacing l.context l.letterSpacing
+
+    lines <- case l.maxWidth of
+      Just maxWidth -> wrapLines l.context maxWidth l.text
+      Nothing -> pure $ String.lines l.text
+    widths <- traverse (measureTextWidth l.context) lines
+    lineTextHeight <- measureMaxTextHeight l.context lines
+
+    pure $ flip Array.any (Array.enumerate widths) \(Tuple i width) -> do
+      let lineY = l.position.y
+                + lineTextHeight * toNumber i
+                + (l.lineHeight - 1.0) * lineTextHeight * toNumber (i - 1)
+      case l.align of
+        AlignStart  -> l.position.x <= x && x <= l.position.x + width
+                    && lineY <= y && y <= lineY + lineTextHeight
+        AlignLeft   -> l.position.x <= x && x <= l.position.x + width
+                    && lineY <= y && y <= lineY + lineTextHeight
+        AlignEnd    -> l.position.x - width <= x && x <= l.position.x
+                    && lineY <= y && y <= lineY + lineTextHeight
+        AlignRight  -> l.position.x - width <= x && x <= l.position.x
+                    && lineY <= y && y <= lineY + lineTextHeight
+        AlignCenter -> l.position.x - width/2.0 <= x && x <= l.position.x + width/2.0
+                    && lineY <= y && y <= lineY + lineTextHeight
+
+  dragStart offset (TextLayer layer) = pure $ TextLayer layer { dragOffset = Just offset }
+  drag t l@(TextLayer layer) = dragTranslateMaybe layer.dragOffset t l
+  dragEnd (TextLayer layer) = pure $ TextLayer layer { dragOffset = Nothing }
+
+  draw ctx (TextLayer l) = withContext ctx do
+    setFillStyle ctx l.fillStyle
+    setFont ctx $ l.fontStyle <> " " <> l.fontWeight <> " " <> show l.fontSize <> "px " <> l.fontName
+    setTextBaseline ctx l.baseline
+    setTextAlign ctx l.align
+    setLetterSpacing ctx l.letterSpacing
+    lines <- case l.maxWidth of
+      Just maxWidth -> wrapLines ctx maxWidth l.text
+      Nothing -> pure $ String.lines l.text
+    lineTextHeight <- measureMaxTextHeight ctx lines
+    for_ (Array.enumerate lines) \(Tuple i line) -> do
+      fillText ctx line l.position.x $ l.position.y + toNumber i * lineTextHeight * l.lineHeight
+
+measureTextHeight :: Context2D -> String -> Effect Number
+measureTextHeight ctx text = do
+  metrics <- measureText ctx text
+  -- XXX: measure based on alphabetic baseline?
+  -- pure $ metrics.width
+  pure $ metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
+
+measureTextWidth :: Context2D -> String -> Effect Number
+measureTextWidth ctx text = do
+  metrics <- measureText ctx text
+  -- XXX: use actual bounding box?
+  -- pure $ metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight
+  pure metrics.width
+
+measureMaxTextHeight :: Context2D -> Array String -> Effect Number
+measureMaxTextHeight ctx lines = fromMaybe 0.0 <<< maximum <$> traverse (measureTextHeight ctx) lines
+
+measureMaxTextWidth :: Context2D -> Array String -> Effect Number
+measureMaxTextWidth ctx lines = fromMaybe 0.0 <<< maximum <$> traverse (measureTextWidth ctx) lines
+
+wrapLines :: Context2D -> Number -> String -> Effect (Array String)
+wrapLines ctx maxWidth text = Array.concat <$> traverse (wrapLine ctx maxWidth) (String.lines text)
+
+wrapLine :: Context2D -> Number -> String -> Effect (Array String)
+wrapLine ctx maxWidth text = do
+  let words = String.words text
+  wordWidths <- traverse (measureTextWidth ctx) words
+  spaceWidth <- measureTextWidth ctx " "
+
+  let go :: Array (Array String) /\ Array String /\ Number -> String /\ Number -> Array (Array String) /\ Array String /\ Number
+      go (lines /\ []   /\ _        ) (word /\ wordWidth) = lines /\ [word] /\ wordWidth
+      go (lines /\ line /\ lineWidth) (word /\ wordWidth) =
+        if lineWidth + spaceWidth + wordWidth > maxWidth
+        then Array.snoc lines line /\ [word] /\ wordWidth
+        else lines /\ Array.snoc line word /\ (lineWidth + spaceWidth + wordWidth)
+  let lines' /\ line /\ _ = foldl go ([] /\ [] /\ 0.0) (Array.zip words wordWidths)
+  let lines = String.joinWith " " <$> lines'
+
+  case line of
+    [] -> pure lines
+    _ -> pure $ Array.snoc lines $ String.joinWith " " line

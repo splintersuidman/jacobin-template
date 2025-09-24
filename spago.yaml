@@ -1,0 +1,26 @@
+package:
+  name: jacobin-template
+  dependencies:
+    - bound
+    - canvas
+    - console
+    - debug
+    - effect
+    - foldable-traversable
+    - numbers
+    - partial
+    - prelude
+    - record
+    - refs
+    - strings
+    - stringutils
+    - unlift
+    - web-dom
+    - web-events
+    - web-html
+    - web-uievents
+workspace:
+  packageSet:
+    registry: 66.5.0
+  extraPackages:
+    bound: 0.6.0
