@@ -19,6 +19,7 @@ package:
     - web-events
     - web-file
     - web-html
+    - web-touchevents
     - web-uievents
 workspace:
   packageSet:

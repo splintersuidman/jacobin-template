@@ -67,6 +67,9 @@ import Web.HTML.HTMLElement (click, fromElement, offsetHeight, offsetWidth, toEl
 import Web.HTML.HTMLInputElement as Input
 import Web.HTML.HTMLTextAreaElement as TextArea
 import Web.HTML.Window (document) as Html
+import Web.TouchEvent.Touch as Touch
+import Web.TouchEvent.TouchEvent as TouchEvent
+import Web.TouchEvent.TouchList as TouchList
 import Web.UIEvent.MouseEvent as MouseEvent
 
 type Template' p =
@@ -109,16 +112,21 @@ redraw template = do
   Canvas.clearRect ctx { x: 0.0, y: 0.0, width, height }
   Canvas.withContext ctx $ Layer.draw @Effect ctx template.layer
 
--- XXX: touch events
 addEventListeners :: Template -> Effect Unit
 addEventListeners template = do
   mousedownListener <- mkMousedownListener template
   mousemoveListener <- mkMousemoveListener template
   mouseupListener <- mkMouseupListener template
+  touchstartListener <- mkTouchstartListener template
+  touchmoveListener <- mkTouchmoveListener template
+  touchendListener <- mkTouchendListener template
   inputListener <- mkInputListener template
   Event.addEventListener (EventType "mousedown") mousedownListener false $ Dom.toEventTarget template.canvasElement
   Event.addEventListener (EventType "mousemove") mousemoveListener false $ Dom.toEventTarget template.canvasElement
   Event.addEventListener (EventType "mouseup") mouseupListener false $ Dom.toEventTarget template.canvasElement
+  Event.addEventListener (EventType "touchstart") touchstartListener false $ Dom.toEventTarget template.canvasElement
+  Event.addEventListener (EventType "touchmove") touchmoveListener false $ Dom.toEventTarget template.canvasElement
+  Event.addEventListener (EventType "touchend") touchendListener false $ Dom.toEventTarget template.canvasElement
   Event.addEventListener (EventType "input") inputListener false $ HtmlDocument.toEventTarget template.document
 
 mkDownloadButton :: String -> String -> Template -> Effect (Maybe Element)
@@ -163,7 +171,6 @@ mkDownloadButtonClip buttonId filename clip template = runMaybeT do
     Html.click linkHtmlElement
   lift $ Event.addEventListener (EventType "click") clickListener false $ Dom.toEventTarget downloadButtonElement
   pure downloadButtonElement
-
 mkMousedownListener :: Template -> Effect EventListener
 mkMousedownListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
     Nothing -> pure unit
@@ -176,6 +183,21 @@ mkMousedownListener template = Event.eventListener \event -> case MouseEvent.fro
       let offset = { offsetX: x - pos.x, offsetY: y - pos.y }
       _ <- Layer.dragStart offset template.layer
       redraw template
+
+mkTouchstartListener :: Template -> Effect EventListener
+mkTouchstartListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
+    Nothing -> pure unit
+    Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
+      Nothing -> redraw template
+      Just touch ->  do
+        pos <- Layer.position template.layer
+        { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
+            { x: toNumber $ Touch.clientX touch
+            , y: toNumber $ Touch.clientY touch
+            }
+        let offset = { offsetX: x - pos.x, offsetY: y - pos.y }
+        _ <- Layer.dragStart offset template.layer
+        redraw template
 
 mkMousemoveListener :: Template -> Effect EventListener
 mkMousemoveListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
@@ -190,6 +212,21 @@ mkMousemoveListener template = Event.eventListener \event -> case MouseEvent.fro
       _ <- Layer.drag translation template.layer
       redraw template
 
+mkTouchmoveListener :: Template -> Effect EventListener
+mkTouchmoveListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
+    Nothing -> pure unit
+    Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
+      Nothing -> redraw template
+      Just touch ->  do
+        pos <- Layer.position template.layer
+        { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
+            { x: toNumber $ Touch.clientX touch
+            , y: toNumber $ Touch.clientY touch
+            }
+        let translation = { translateX: x - pos.x, translateY: y - pos.y }
+        _ <- Layer.drag translation template.layer
+        redraw template
+
 mkMouseupListener :: Template -> Effect EventListener
 mkMouseupListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
     Nothing -> pure unit
@@ -203,6 +240,22 @@ mkMouseupListener template = Event.eventListener \event -> case MouseEvent.fromE
       _ <- Layer.drag translation template.layer
       _ <- Layer.dragEnd template.layer
       redraw template
+
+mkTouchendListener :: Template -> Effect EventListener
+mkTouchendListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
+    Nothing -> pure unit
+    Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
+      Nothing -> redraw template
+      Just touch ->  do
+        pos <- Layer.position template.layer
+        { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
+            { x: toNumber $ Touch.clientX touch
+            , y: toNumber $ Touch.clientY touch
+            }
+        let translation = { translateX: x - pos.x, translateY: y - pos.y }
+        _ <- Layer.drag translation template.layer
+        _ <- Layer.dragEnd template.layer
+        redraw template
 
 mkInputListener :: Template -> Effect EventListener
 mkInputListener template = Event.eventListener \_ -> redraw template

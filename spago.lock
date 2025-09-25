@@ -23,6 +23,7 @@
             "web-events",
             "web-file",
             "web-html",
+            "web-touchevents",
             "web-uievents"
           ],
           "build_plan": [
@@ -90,6 +91,7 @@
             "web-file",
             "web-html",
             "web-storage",
+            "web-touchevents",
             "web-uievents"
           ]
         },
@@ -1445,6 +1447,14 @@
       "dependencies": [
         "nullable",
         "web-events"
+      ]
+    },
+    "web-touchevents": {
+      "type": "registry",
+      "version": "4.0.0",
+      "integrity": "sha256-nDHMyXbkDfCEp299RLHCqj5HCDgWXFFy80lGoGjSzms=",
+      "dependencies": [
+        "web-uievents"
       ]
     },
     "web-uievents": {
