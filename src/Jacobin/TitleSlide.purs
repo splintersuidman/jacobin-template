@@ -223,7 +223,7 @@ main = void $ unsafePartial do
     , fillStyle: "#f00"
     , fontName: "Oswald"
     , fontStyle: "normal"
-    , fontWeight: "500"
+    , fontWeight: "400"
     , fontSize: 2.0 * 50.0
     , align: AlignLeft
     , baseline: BaselineTop

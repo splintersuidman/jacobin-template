@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.String (toUpper)
 import Effect (Effect)
 import Graphics.Canvas (Composite(..), getContext2D) as Canvas
-import Graphics.Canvas (Dimensions, TextAlign(..), TextBaseline(..))
+import Graphics.Canvas (Dimensions, TextAlign(..), TextBaseline(..), ScaleTransform)
 import Partial.Unsafe (unsafePartial)
 import Template.Layer (mkSomeLayer)
 import Template.Layer.Image (mkImageLayer)
@@ -17,8 +17,23 @@ import Template.Layer.Text (TextLayer(..), setText)
 import Template.Layer.Undraggable (mkUndraggable)
 import Template.Main (addEventListeners, connectInputPure, connectTextAreaPure, connectTextSizeRange, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
 
+instagramDimensions :: Dimensions
+instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0/4.0 }
+
+templateResolution :: Number
+templateResolution = 2.0
+
+templateResolutionScale :: ScaleTransform
+templateResolutionScale = { scaleX: templateResolution, scaleY: templateResolution }
+
 templateDimensions :: Dimensions
-templateDimensions = { width: 2.0 * 1080.0, height: 2.0 * 1080.0 * 5.0/4.0 }
+templateDimensions = { width: templateResolution, height: templateResolution } * instagramDimensions
+
+templateWidth :: Number
+templateWidth = templateDimensions.width
+
+templateHeight :: Number
+templateHeight = templateDimensions.height
 
 main :: Effect Unit
 main = void $ unsafePartial do
@@ -27,64 +42,64 @@ main = void $ unsafePartial do
 
   guillotine <- mkImageLayer
     "./img/guillotine.svg"
-    { x: 2.0*60.0, y: 2.0*60.0 }
-    { scaleX: 2.0, scaleY: 2.0 }
+    { x: 60.0 * templateResolution, y: 60.0 * templateResolution }
+    templateResolutionScale
     Canvas.SourceOver
 
   logo <- mkImageLayer
     "./img/jacobinlogo.svg"
-    { x: templateDimensions.width - 2.0*120.0, y: templateDimensions.height - 2.0*200.0 }
-    { scaleX: 2.0, scaleY: 2.0 }
+    { x: templateDimensions.width - 120.0 * templateResolution, y: templateDimensions.height - 200.0 * templateResolution }
+    templateResolutionScale
     Canvas.SourceOver
 
   bodyTextLayer <- mkRefLayer $ TextLayer
-      { text: "Broodtekst"
-      , lineHeight: 0.95
-      , position: { x: 120.0, y: 300.0 }
-      , fillStyle: "#f00"
-      , fontName: "Oswald"
-      , fontStyle: "normal"
-      , fontWeight: "500"
-      , fontSize: 180.0
-      , align: AlignLeft
-      , baseline: BaselineTop
-      , letterSpacing: "-3px"
-      , dragOffset: Nothing
-      , maxWidth: Just $ templateDimensions.width - 2.0*120.0
-      , context: canvasContext
-      }
+    { text: "Broodtekst"
+    , lineHeight: 0.95
+    , position: { x: 60.0 * templateResolution, y: 150.0 * templateResolution }
+    , fillStyle: "#f00"
+    , fontName: "Oswald"
+    , fontStyle: "normal"
+    , fontWeight: "500"
+    , fontSize: 90.0 * templateResolution
+    , align: AlignLeft
+    , baseline: BaselineTop
+    , letterSpacing: "-3px"
+    , dragOffset: Nothing
+    , maxWidth: Just $ templateDimensions.width - 2.0 * 60.0 * templateResolution
+    , context: canvasContext
+    }
   connectTextAreaPure templateContext "bodytext" bodyTextLayer setText
   connectTextSizeRange templateContext "bodytext-size" bodyTextLayer
 
   authorLayer <- mkRefLayer $ TextLayer
-      { text: "AUTEUR"
-      , lineHeight: 0.95
-      , position: { x: 2.0*60.0, y: templateDimensions.height - 2.0*200.0 }
-      , fillStyle: "#f00"
-      , fontName: "Oswald"
-      , fontStyle: "normal"
-      , fontWeight: "500"
-      , fontSize: 2.0 * 50.0
-      , align: AlignLeft
-      , baseline: BaselineTop
-      , letterSpacing: "-3px"
-      , dragOffset: Nothing
-      , maxWidth: Nothing
-      , context: canvasContext
-      }
+    { text: "AUTEUR"
+    , lineHeight: 0.95
+    , position: { x: 60.0 * templateResolution, y: templateDimensions.height - 200.0 * templateResolution }
+    , fillStyle: "#f00"
+    , fontName: "Oswald"
+    , fontStyle: "normal"
+    , fontWeight: "400"
+    , fontSize: 50.0 * templateResolution
+    , align: AlignLeft
+    , baseline: BaselineTop
+    , letterSpacing: "-3px"
+    , dragOffset: Nothing
+    , maxWidth: Nothing
+    , context: canvasContext
+    }
 
   connectInputPure templateContext "author" authorLayer (setText <<< toUpper)
 
   titleLayer <- mkRefLayer $ TextLayer
     { text: "Titel"
     , lineHeight: 0.9
-    , position: { x: 2.0*60.0, y: templateDimensions.height - 2.0*200.0 + 2.0*50.0 }
-    , maxWidth: Just $ templateDimensions.width - 4.0*2.0*60.0
+    , position: { x: 60.0 * templateResolution, y: templateDimensions.height - 200.0 * templateResolution + 50.0 * templateResolution }
+    , maxWidth: Just $ templateDimensions.width - 4.0 * 60.0 * templateResolution
     , fillStyle: "#f00"
     , fontName: "Oswald"
     , fontStyle: "normal"
     , fontWeight: "700"
-    , fontSize: 2.0 * 50.0
+    , fontSize: 50.0 * templateResolution
     , align: AlignLeft
     , baseline: BaselineTop
     , letterSpacing: "-2px"
@@ -99,7 +114,7 @@ main = void $ unsafePartial do
         , mkSomeLayer authorLayer
         , mkSomeLayer titleLayer
         , mkSomeLayer bodyTextLayer
-        , mkSomeLayer $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateDimensions.width, height: templateDimensions.height } "#fff"
+        , mkSomeLayer $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateWidth, height: templateHeight } "#fff"
         ]
 
   template <- mkTemplate templateContext layers
