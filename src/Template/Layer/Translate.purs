@@ -30,7 +30,7 @@ instance (Monad m, Layer m l) => Layer m (TranslateLayer l) where
   drag = mapLayerWrapper <<< drag
   dragEnd = mapLayerWrapper dragEnd
 
-  draw ctx (TranslateLayer l) = Canvas.withContext ctx $ do
+  draw ctx (TranslateLayer l) = Canvas.withContext ctx do
     Canvas.translate ctx l.translation
     draw @m ctx l.layer
 

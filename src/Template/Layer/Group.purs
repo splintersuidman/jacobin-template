@@ -18,7 +18,7 @@ newtype Group m = Group
   , dragOffset :: Maybe DragOffset
   }
 
-mkGroup :: forall m. Array (SomeLayer m) -> Group m
+mkGroup :: forall @m. Array (SomeLayer m) -> Group m
 mkGroup layers = Group
   { layers
   , position: { x: 0.0, y: 0.0 }

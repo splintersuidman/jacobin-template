@@ -7,6 +7,7 @@ module Template.Main
   , redraw
   , addEventListeners
   , mkDownloadButton
+  , mkDownloadButtonClip
   , toCanvasCoordinates
   , connectInputPure
   , connectInput
@@ -15,6 +16,12 @@ module Template.Main
   , connectRange
   , connectRangePure
   , connectTextSizeRange
+  , connectScaleRange
+  , connectFileInput
+  , connectFileInputPure
+  , connectBlobInput
+  , connectBlobInputPure
+  , connectObjectUrlInput
   ) where
 
 import Prelude
@@ -22,15 +29,17 @@ import Prelude
 import Control.Monad.Maybe.Trans (runMaybeT)
 import Control.Monad.Maybe.Trans.Extra (hoistMaybe)
 import Control.Monad.Trans.Class (lift)
+import Data.Array ((!!))
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.Number as Number
 import Effect (Effect)
-import Graphics.Canvas (CanvasElement, Dimensions)
-import Graphics.Canvas (canvasToDataURL, clearRect, getCanvasDimensions, getCanvasElementById, getCanvasHeight, getCanvasWidth, getContext2D, setCanvasDimensions, withContext) as Canvas
+import Effect.Ref as Ref
+import Graphics.Canvas (CanvasElement, Dimensions, Rectangle)
+import Graphics.Canvas (canvasElementToImageSource, canvasToDataURL, clearRect, drawImageFull, getCanvasDimensions, getCanvasElementById, getCanvasHeight, getCanvasWidth, getContext2D, setCanvasDimensions, withContext) as Canvas
 import Partial.Unsafe (unsafePartial)
 import Record as Record
-import Template.Layer (Point, mkSomeLayer, class Layer, SomeLayer)
+import Template.Layer (class Layer, class Scalable, Point, SomeLayer, mkSomeLayer, scalePreserveRatio)
 import Template.Layer as Layer
 import Template.Layer.Ref (RefLayer, mkRefLayer)
 import Template.Layer.Ref as RefLayer
@@ -38,16 +47,23 @@ import Template.Layer.Text (TextLayer)
 import Template.Layer.Text as TextLayer
 import Web.DOM (Element)
 import Web.DOM.Document (createElement) as Dom
-import Web.DOM.Element (getBoundingClientRect, setAttribute, toEventTarget) as Dom
+import Web.DOM.Element (getBoundingClientRect, setAttribute, toEventTarget, toNode) as Dom
+import Web.DOM.Element as Element
+import Web.DOM.Node as Node
 import Web.DOM.NonElementParentNode (getElementById) as Dom
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener)
 import Web.Event.EventTarget as Event
+import Web.File.Blob (Blob)
+import Web.File.File (File)
+import Web.File.File as File
+import Web.File.FileList as FileList
+import Web.File.Url as Url
 import Web.HTML (HTMLDocument, HTMLElement)
 import Web.HTML (window) as Html
 import Web.HTML.HTMLDocument (toNonElementParentNode) as Html
 import Web.HTML.HTMLDocument as HtmlDocument
-import Web.HTML.HTMLElement (click, fromElement, offsetHeight, offsetWidth, toElement) as Html
+import Web.HTML.HTMLElement (click, fromElement, offsetHeight, offsetWidth, toElement, toNode) as Html
 import Web.HTML.HTMLInputElement as Input
 import Web.HTML.HTMLTextAreaElement as TextArea
 import Web.HTML.Window (document) as Html
@@ -93,6 +109,7 @@ redraw template = do
   Canvas.clearRect ctx { x: 0.0, y: 0.0, width, height }
   Canvas.withContext ctx $ Layer.draw @Effect ctx template.layer
 
+-- XXX: touch events
 addEventListeners :: Template -> Effect Unit
 addEventListeners template = do
   mousedownListener <- mkMousedownListener template
@@ -108,7 +125,7 @@ mkDownloadButton :: String -> String -> Template -> Effect (Maybe Element)
 mkDownloadButton buttonId filename template = runMaybeT do
   let documentNode = Html.toNonElementParentNode template.document
   downloadButtonElement <- hoistMaybe =<< lift (Dom.getElementById buttonId documentNode)
-  clickListener <- lift $ Event.eventListener $ \_ -> unsafePartial do
+  clickListener <- lift $ Event.eventListener \_ -> unsafePartial do
     dataUrl <- Canvas.canvasToDataURL template.canvas
     link <- Dom.createElement "a" $ HtmlDocument.toDocument template.document
     Dom.setAttribute "href" dataUrl link
@@ -118,8 +135,37 @@ mkDownloadButton buttonId filename template = runMaybeT do
   lift $ Event.addEventListener (EventType "click") clickListener false $ Dom.toEventTarget downloadButtonElement
   pure downloadButtonElement
 
+mkDownloadButtonClip :: String -> String -> Rectangle -> Template -> Effect (Maybe Element)
+mkDownloadButtonClip buttonId filename clip template = runMaybeT do
+  let documentNode = Html.toNonElementParentNode template.document
+  downloadButtonElement <- hoistMaybe =<< lift (Dom.getElementById buttonId documentNode)
+  clickListener <- lift $ Event.eventListener \_ -> unsafePartial do
+    -- Clip
+    clipCanvasElement <- Dom.createElement "canvas" $ HtmlDocument.toDocument template.document
+    let clipCanvasId = "hidden-clip-canvas"
+    Element.setAttribute "id" clipCanvasId clipCanvasElement
+
+    Just body <- HtmlDocument.body template.document
+    Node.appendChild (Dom.toNode clipCanvasElement) (Html.toNode body)
+
+    Just clipCanvas <- Canvas.getCanvasElementById clipCanvasId
+    Canvas.setCanvasDimensions clipCanvas { width: clip.width, height: clip.height }
+
+    clipCanvasContext <- Canvas.getContext2D clipCanvas
+    let imageSource = Canvas.canvasElementToImageSource template.canvas
+    Canvas.drawImageFull clipCanvasContext imageSource clip.x clip.y clip.width clip.height 0.0 0.0 clip.width clip.height
+
+    dataUrl <- Canvas.canvasToDataURL clipCanvas
+    link <- Dom.createElement "a" $ HtmlDocument.toDocument template.document
+    Dom.setAttribute "href" dataUrl link
+    Dom.setAttribute "download" filename link
+    let Just linkHtmlElement = Html.fromElement link
+    Html.click linkHtmlElement
+  lift $ Event.addEventListener (EventType "click") clickListener false $ Dom.toEventTarget downloadButtonElement
+  pure downloadButtonElement
+
 mkMousedownListener :: Template -> Effect EventListener
-mkMousedownListener template = Event.eventListener $ \event -> case MouseEvent.fromEvent event of
+mkMousedownListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
     Nothing -> pure unit
     Just mouseEvent -> do
       pos <- Layer.position template.layer
@@ -132,7 +178,7 @@ mkMousedownListener template = Event.eventListener $ \event -> case MouseEvent.f
       redraw template
 
 mkMousemoveListener :: Template -> Effect EventListener
-mkMousemoveListener template = Event.eventListener $ \event -> case MouseEvent.fromEvent event of
+mkMousemoveListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
     Nothing -> pure unit
     Just mouseEvent -> do
       pos <- Layer.position template.layer
@@ -145,7 +191,7 @@ mkMousemoveListener template = Event.eventListener $ \event -> case MouseEvent.f
       redraw template
 
 mkMouseupListener :: Template -> Effect EventListener
-mkMouseupListener template = Event.eventListener $ \event -> case MouseEvent.fromEvent event of
+mkMouseupListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
     Nothing -> pure unit
     Just mouseEvent -> do
       pos <- Layer.position template.layer
@@ -159,7 +205,7 @@ mkMouseupListener template = Event.eventListener $ \event -> case MouseEvent.fro
       redraw template
 
 mkInputListener :: Template -> Effect EventListener
-mkInputListener template = Event.eventListener $ \_ -> redraw template
+mkInputListener template = Event.eventListener \_ -> redraw template
 
 toCanvasCoordinates :: CanvasElement -> HTMLElement -> Point -> Effect Point
 toCanvasCoordinates canvas canvasElement { x, y } = do
@@ -181,7 +227,7 @@ connectInput { document } id layer k = unsafePartial do
   initialValue <- Input.value inputElement
   RefLayer.modifyM_ (k initialValue) layer
 
-  inputListener <- Event.eventListener $ \_ -> do
+  inputListener <- Event.eventListener \_ -> do
     value <- Input.value inputElement
     RefLayer.modifyM_ (k value) layer
   Event.addEventListener (EventType "input") inputListener false $ Dom.toEventTarget element
@@ -197,7 +243,7 @@ connectTextArea { document } id layer k = unsafePartial do
   initialValue <- TextArea.value inputElement
   RefLayer.modifyM_ (k initialValue) layer
 
-  inputListener <- Event.eventListener $ \_ -> do
+  inputListener <- Event.eventListener \_ -> do
     value <- TextArea.value inputElement
     RefLayer.modifyM_ (k value) layer
   Event.addEventListener (EventType "input") inputListener false $ Dom.toEventTarget element
@@ -215,7 +261,7 @@ connectRange { document } id layer k = unsafePartial do
     Just value -> RefLayer.modifyM_ (k value) layer
     Nothing -> pure unit
 
-  inputListener <- Event.eventListener $ \_ -> do
+  inputListener <- Event.eventListener \_ -> do
     value' <- Input.value inputElement
     case Number.fromString value' of
       Just value -> RefLayer.modifyM_ (k value) layer
@@ -227,3 +273,42 @@ connectRangePure ctx id layer k = connectRange ctx id layer ((pure <<< _) <<< k)
 
 connectTextSizeRange :: TemplateContext -> String -> RefLayer TextLayer -> Effect Unit
 connectTextSizeRange ctx id layer = connectRangePure ctx id layer TextLayer.setFontSize
+
+connectScaleRange :: forall l. Scalable Effect l => TemplateContext -> String -> RefLayer l -> Effect Unit
+connectScaleRange ctx id layer = do
+  scaleRef <- Ref.new 1.0
+  connectRange ctx id layer \s' l -> do
+    s <- Ref.read scaleRef
+    Ref.write s' scaleRef
+    scalePreserveRatio (s' / s) l
+
+connectFileInput :: forall l. TemplateContext -> String -> RefLayer l -> (File -> l -> Effect l) -> Effect Unit
+connectFileInput { document } id layer k = unsafePartial do
+  Just element <- Dom.getElementById id $ Html.toNonElementParentNode document
+  let Just inputElement = Input.fromElement element
+
+  let callback = \value -> case value of
+        Nothing -> pure unit
+        Just fileList -> case FileList.items fileList !! 0 of
+          Nothing -> pure unit
+          Just file -> RefLayer.modifyM_ (k file) layer
+
+  initialValue <- Input.files inputElement
+  callback initialValue
+
+  inputListener <- Event.eventListener \_ -> callback =<< Input.files inputElement
+  Event.addEventListener (EventType "change") inputListener false $ Dom.toEventTarget element
+
+connectFileInputPure :: forall l. TemplateContext -> String -> RefLayer l -> (File -> l -> l) -> Effect Unit
+connectFileInputPure  ctx id layer k = connectFileInput ctx id layer ((pure <<< _) <<< k)
+
+connectBlobInput :: forall l. TemplateContext -> String -> RefLayer l -> (Blob -> l -> Effect l) -> Effect Unit
+connectBlobInput ctx id layer k = connectFileInput ctx id layer (k <<< File.toBlob)
+
+connectBlobInputPure :: forall l. TemplateContext -> String -> RefLayer l -> (Blob -> l -> l) -> Effect Unit
+connectBlobInputPure  ctx id layer k = connectBlobInput ctx id layer ((pure <<< _) <<< k)
+
+connectObjectUrlInput :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> Effect l) -> Effect Unit
+connectObjectUrlInput ctx id layer k = connectBlobInput ctx id layer \blob l -> do
+  url <- Url.createObjectURL blob
+  k url l

@@ -49,3 +49,7 @@ textarea.input {
         margin-top: 10vh;
     }
 }
+
+#hidden-clip-canvas {
+    display: none;
+}

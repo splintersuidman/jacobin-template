@@ -2,11 +2,12 @@ module Template.Layer.Text
   ( TextLayer(..)
   , setText
   , setFontSize
+  , mapMaxWidth
   ) where
 
 import Prelude
 
-import Data.Array (any, concat, snoc, zip) as Array
+import Data.Array (any, concat, length, snoc, zip) as Array
 import Data.Array.Extra (enumerate) as Array
 import Data.Foldable (for_, maximum, foldl)
 import Data.Int (toNumber)
@@ -18,7 +19,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline, fillText, setFillStyle, setFont, setTextAlign, setTextBaseline, withContext)
+import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline(..), fillText, setFillStyle, setFont, setTextAlign, setTextBaseline, withContext)
 import Graphics.Canvas.Extra (setLetterSpacing)
 import Graphics.Canvas.TextMetrics (measureText)
 import Template.Layer (class Layer, DragOffset, Point, dragTranslateMaybe, translatePoint)
@@ -46,6 +47,9 @@ setText text (TextLayer l) = TextLayer l { text = text }
 setFontSize :: Number -> TextLayer -> TextLayer
 setFontSize fontSize (TextLayer l) = TextLayer l { fontSize = fontSize }
 
+mapMaxWidth :: (Number -> Number) -> TextLayer -> TextLayer
+mapMaxWidth f (TextLayer l) = TextLayer l { maxWidth = map f l.maxWidth }
+
 instance MonadEffect m => Layer m TextLayer where
   position (TextLayer l) = pure l.position
   translate translation (TextLayer l) = pure $ TextLayer l { position = translatePoint translation l.position }
@@ -66,9 +70,12 @@ instance MonadEffect m => Layer m TextLayer where
     lineTextHeight <- measureMaxTextHeight l.context lines
 
     pure $ flip Array.any (Array.enumerate widths) \(Tuple i width) -> do
-      let lineY = l.position.y
-                + lineTextHeight * toNumber i
-                + (l.lineHeight - 1.0) * lineTextHeight * toNumber (i - 1)
+      -- XXX: support other baselines
+      let lineY = case l.baseline of
+            BaselineTop    -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
+            BaselineBottom -> l.position.y - lineTextHeight - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
+            _              -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
+
       case l.align of
         AlignStart  -> l.position.x <= x && x <= l.position.x + width
                     && lineY <= y && y <= lineY + lineTextHeight
@@ -91,12 +98,19 @@ instance MonadEffect m => Layer m TextLayer where
     setTextBaseline ctx l.baseline
     setTextAlign ctx l.align
     setLetterSpacing ctx l.letterSpacing
+
     lines <- case l.maxWidth of
       Just maxWidth -> wrapLines ctx maxWidth l.text
       Nothing -> pure $ String.lines l.text
     lineTextHeight <- measureMaxTextHeight ctx lines
+
     for_ (Array.enumerate lines) \(Tuple i line) -> do
-      fillText ctx line l.position.x $ l.position.y + toNumber i * lineTextHeight * l.lineHeight
+      -- XXX: support other baselines
+      let y = case l.baseline of
+            BaselineTop -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
+            BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
+            _ -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
+      fillText ctx line l.position.x y
 
 measureTextHeight :: Context2D -> String -> Effect Number
 measureTextHeight ctx text = do
