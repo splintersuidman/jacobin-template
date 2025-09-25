@@ -273,7 +273,6 @@ main = void $ unsafePartial do
         , mkSomeLayer $ mkUndraggableVertical overlayLayer
         , mkSomeLayer backgroundImageLayer 
         , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateDimensions.width, height: templateDimensions.height } "#f00"
-        , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateDimensions.width, height: templateDimensions.height } "#f00"
         ]
 
   template <- mkTemplate templateContext layers
