@@ -20,10 +20,12 @@ import Template.Layer.Layers (mkLayers)
 import Template.Layer.Rectangle (mkRectangleLayer)
 import Template.Layer.Ref (RefLayer, mkRefLayer)
 import Template.Layer.Ref as RefLayer
-import Template.Layer.Text (TextLayer(..), setText)
+import Template.Layer.Text (TextLayer(..))
 import Template.Layer.Text as TextLayer
+import Template.Layer.Text.Markup (MarkupTextLayer(..))
+import Template.Layer.Text.Markup as MarkupTextLayer
 import Template.Layer.Undraggable (mkUndraggable, mkUndraggableVertical)
-import Template.Main (addEventListeners, connectInputPure, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, connectTextSizeRange, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
+import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
 instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0/4.0 }
@@ -81,9 +83,9 @@ instance MonadEffect m => Layer m GuillotineLayer where
 newtype OverlayLayer = OverlayLayer
   { overlayBackground :: OverlayBackgroundLayer
   , guillotine :: GuillotineLayer
-  , bodyText :: RefLayer TextLayer
+  , bodyText :: RefLayer MarkupTextLayer
   , author :: RefLayer TextLayer
-  , title :: RefLayer TextLayer
+  , title :: RefLayer MarkupTextLayer
   }
 
 instance MonadEffect m => Layer m OverlayLayer where
@@ -93,8 +95,8 @@ instance MonadEffect m => Layer m OverlayLayer where
     guillotine <- translate translation l.guillotine
     author <- translate translation l.author
     title <- translate translation l.title
-    RefLayer.modify_ (TextLayer.mapMaxWidth (_ - translateX)) title
-    RefLayer.modify_ (TextLayer.mapMaxWidth (_ - translateX)) l.bodyText
+    RefLayer.modify_ (MarkupTextLayer.mapMaxWidth (_ - translateX)) title
+    RefLayer.modify_ (MarkupTextLayer.mapMaxWidth (_ - translateX)) l.bodyText
     pure $ OverlayLayer
       { overlayBackground
       , guillotine
@@ -160,15 +162,17 @@ main = void $ unsafePartial do
     templateResolutionScale
     Canvas.SourceOver
 
-  bodyTextLayer <- mkRefLayer $ TextLayer
-    { text: "Broodtekst"
+  bodyTextLayer <- mkRefLayer $ MarkupTextLayer
+    { text: []
     , lineHeight: 0.95
     , position: { x: templateWidth - templateResolution * 60.0, y: templateResolution * 150.0 }
     , fillStyle: "#f00"
-    , fontName: "Oswald"
-    , fontStyle: "normal"
-    , fontWeight: "500"
-    , fontSize: 180.0
+    , font:
+      { name: "Oswald"
+      , style: { normal: "normal", italic: "italic" }
+      , weight: { normal: "500", bold: "700" }
+      , size: 90.0 * templateResolution
+      }
     , align: AlignRight
     , baseline: BaselineTop
     , letterSpacing: "-3px"
@@ -176,28 +180,30 @@ main = void $ unsafePartial do
     , maxWidth: Just $ templateWidth/2.0 - 2.0 * 60.0 * templateResolution
     , context: canvasContext
     }
-  connectTextAreaPure templateContext "bodytext" bodyTextLayer setText
-  connectTextSizeRange templateContext "bodytext-size" bodyTextLayer
+  connectTextAreaPure templateContext "bodytext" bodyTextLayer MarkupTextLayer.setText'
+  connectMarkupTextSizeRange templateContext "bodytext-size" bodyTextLayer
 
   let bigTitleAndAuthorPosition = { x: 60.0 * templateResolution, y: 800.0 * templateResolution }
-  bigTitleLayer <- mkRefLayer $ TextLayer
-    { text: "Titel"
+  bigTitleLayer <- mkRefLayer $ MarkupTextLayer
+    { text: []
     , lineHeight: 0.9
     , position: bigTitleAndAuthorPosition
     , maxWidth: Just $ templateWidth/2.0 - 2.0 * 60.0 * templateResolution
     , fillStyle: "#fff"
-    , fontName: "Oswald"
-    , fontStyle: "normal"
-    , fontWeight: "700"
-    , fontSize: 2.0 * 100.0
+    , font:
+      { name: "Oswald"
+      , style: { normal: "normal", italic: "italic" }
+      , weight: { normal: "700", bold: "700" }
+      , size: 100.0 * templateResolution
+      }
     , align: AlignLeft
     , baseline: BaselineBottom
     , letterSpacing: "-2px"
     , dragOffset: Nothing
     , context: canvasContext
     }
-  connectTextAreaPure templateContext "title" bigTitleLayer setText
-  connectTextSizeRange templateContext "title-size" bigTitleLayer
+  connectTextAreaPure templateContext "title" bigTitleLayer MarkupTextLayer.setText'
+  connectMarkupTextSizeRange templateContext "title-size" bigTitleLayer
 
   bigAuthorLayer <- mkRefLayer $ TextLayer
     { text: "AUTEUR"
@@ -215,7 +221,7 @@ main = void $ unsafePartial do
     , maxWidth: Nothing
     , context: canvasContext
     }
-  connectInputPure templateContext "author" bigAuthorLayer setText
+  connectInputPure templateContext "author" bigAuthorLayer TextLayer.setText
 
   let bigTitleAndAuthorLayer = mkGroup @Effect
         [ mkSomeLayer bigTitleLayer
@@ -238,25 +244,27 @@ main = void $ unsafePartial do
     , maxWidth: Nothing
     , context: canvasContext
     }
-  connectInputPure templateContext "author" smallAuthorLayer (setText <<< toUpper)
+  connectInputPure templateContext "author" smallAuthorLayer (TextLayer.setText <<< toUpper)
 
-  smallTitleLayer <- mkRefLayer $ TextLayer
-    { text: "Titel"
+  smallTitleLayer <- mkRefLayer $ MarkupTextLayer
+    { text: []
     , lineHeight: 0.9
     , position: { x: templateWidth/2.0 + 128.0 * templateResolution, y: templateHeight - 200.0 * templateResolution + 50.0 * templateResolution }
     , maxWidth: Just $ templateWidth/2.0 - (128.0 + 2.0 * 60.0 + 20.0) * templateResolution
     , fillStyle: "#f00"
-    , fontName: "Oswald"
-    , fontStyle: "normal"
-    , fontWeight: "700"
-    , fontSize: 2.0 * 50.0
+    , font:
+      { name: "Oswald"
+      , style: { normal: "normal", italic: "italic" }
+      , weight: { normal: "500", bold: "700" }
+      , size: 50.0 * templateResolution
+      }
     , align: AlignLeft
     , baseline: BaselineTop
     , letterSpacing: "-2px"
     , dragOffset: Nothing
     , context: canvasContext
     }
-  connectTextAreaPure templateContext "title" smallTitleLayer setText
+  connectTextAreaPure templateContext "title" smallTitleLayer MarkupTextLayer.setText'
 
   let overlayBackgroundLayer = mkOverlayBackgroundLayer
         { x: templateWidth/2.0 + 60.0 * templateResolution, y: 0.0 }

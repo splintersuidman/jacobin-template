@@ -3,6 +3,10 @@ module Template.Layer.Text
   , setText
   , setFontSize
   , mapMaxWidth
+  , measureTextHeight
+  , measureTextWidth
+  , measureMaxTextHeight
+  , measureMaxTextWidth
   ) where
 
 import Prelude
@@ -106,6 +110,10 @@ instance MonadEffect m => Layer m TextLayer where
 
     for_ (Array.enumerate lines) \(Tuple i line) -> do
       -- XXX: support other baselines
+      -- XXX: maybe add another property indicating whether the text
+      -- should be anchored at the top or bottom, and use baseline
+      -- only for what fillText uses it for (per line instead of per
+      -- block)
       let y = case l.baseline of
             BaselineTop -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
             BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight

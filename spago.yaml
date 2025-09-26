@@ -8,6 +8,7 @@ package:
     - effect
     - foldable-traversable
     - numbers
+    - parsing
     - partial
     - prelude
     - record

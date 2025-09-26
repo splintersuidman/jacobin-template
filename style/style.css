@@ -14,12 +14,12 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .label-input-pair {
     display: flex;
     flex-direction: column;
-    font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .label-input-pair .input {

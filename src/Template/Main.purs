@@ -16,6 +16,7 @@ module Template.Main
   , connectRange
   , connectRangePure
   , connectTextSizeRange
+  , connectMarkupTextSizeRange
   , connectScaleRange
   , connectFileInput
   , connectFileInputPure
@@ -45,6 +46,8 @@ import Template.Layer.Ref (RefLayer, mkRefLayer)
 import Template.Layer.Ref as RefLayer
 import Template.Layer.Text (TextLayer)
 import Template.Layer.Text as TextLayer
+import Template.Layer.Text.Markup (MarkupTextLayer(..))
+import Template.Layer.Text.Markup as MarkupTextLayer
 import Web.DOM (Element)
 import Web.DOM.Document (createElement) as Dom
 import Web.DOM.Element (getBoundingClientRect, setAttribute, toEventTarget, toNode) as Dom
@@ -326,6 +329,9 @@ connectRangePure ctx id layer k = connectRange ctx id layer ((pure <<< _) <<< k)
 
 connectTextSizeRange :: TemplateContext -> String -> RefLayer TextLayer -> Effect Unit
 connectTextSizeRange ctx id layer = connectRangePure ctx id layer TextLayer.setFontSize
+
+connectMarkupTextSizeRange :: TemplateContext -> String -> RefLayer MarkupTextLayer -> Effect Unit
+connectMarkupTextSizeRange ctx id layer = connectRangePure ctx id layer MarkupTextLayer.setFontSize
 
 connectScaleRange :: forall l. Scalable Effect l => TemplateContext -> String -> RefLayer l -> Effect Unit
 connectScaleRange ctx id layer = do

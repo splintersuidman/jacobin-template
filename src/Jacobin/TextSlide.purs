@@ -14,8 +14,10 @@ import Template.Layer.Layers (mkLayers)
 import Template.Layer.Rectangle (mkRectangleLayer)
 import Template.Layer.Ref (mkRefLayer)
 import Template.Layer.Text (TextLayer(..), setText)
+import Template.Layer.Text.Markup (MarkupTextLayer(..))
+import Template.Layer.Text.Markup as Markup
 import Template.Layer.Undraggable (mkUndraggable)
-import Template.Main (addEventListeners, connectInputPure, connectTextAreaPure, connectTextSizeRange, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
+import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectTextAreaPure, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
 instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0/4.0 }
@@ -52,15 +54,17 @@ main = void $ unsafePartial do
     templateResolutionScale
     Canvas.SourceOver
 
-  bodyTextLayer <- mkRefLayer $ TextLayer
-    { text: "Broodtekst"
+  bodyTextLayer <- mkRefLayer $ MarkupTextLayer
+    { text: []
     , lineHeight: 0.95
     , position: { x: 60.0 * templateResolution, y: 150.0 * templateResolution }
     , fillStyle: "#f00"
-    , fontName: "Oswald"
-    , fontStyle: "normal"
-    , fontWeight: "500"
-    , fontSize: 90.0 * templateResolution
+    , font:
+      { name: "Oswald"
+      , style: { normal: "normal", italic: "italic" }
+      , weight: { normal: "500", bold: "700" }
+      , size: 90.0 * templateResolution
+      }
     , align: AlignLeft
     , baseline: BaselineTop
     , letterSpacing: "-3px"
@@ -68,8 +72,8 @@ main = void $ unsafePartial do
     , maxWidth: Just $ templateDimensions.width - 2.0 * 60.0 * templateResolution
     , context: canvasContext
     }
-  connectTextAreaPure templateContext "bodytext" bodyTextLayer setText
-  connectTextSizeRange templateContext "bodytext-size" bodyTextLayer
+  connectTextAreaPure templateContext "bodytext" bodyTextLayer Markup.setText'
+  connectMarkupTextSizeRange templateContext "bodytext-size" bodyTextLayer
 
   authorLayer <- mkRefLayer $ TextLayer
     { text: "AUTEUR"
@@ -90,23 +94,25 @@ main = void $ unsafePartial do
 
   connectInputPure templateContext "author" authorLayer (setText <<< toUpper)
 
-  titleLayer <- mkRefLayer $ TextLayer
-    { text: "Titel"
+  titleLayer <- mkRefLayer $ MarkupTextLayer
+    { text: []
     , lineHeight: 0.9
     , position: { x: 60.0 * templateResolution, y: templateDimensions.height - 200.0 * templateResolution + 50.0 * templateResolution }
     , maxWidth: Just $ templateDimensions.width - 4.0 * 60.0 * templateResolution
     , fillStyle: "#f00"
-    , fontName: "Oswald"
-    , fontStyle: "normal"
-    , fontWeight: "700"
-    , fontSize: 50.0 * templateResolution
+    , font:
+      { name: "Oswald"
+      , style: { normal: "normal", italic: "italic" }
+      , weight: { normal: "500", bold: "700" }
+      , size: 50.0 * templateResolution
+      }
     , align: AlignLeft
     , baseline: BaselineTop
     , letterSpacing: "-2px"
     , dragOffset: Nothing
     , context: canvasContext
     }
-  connectTextAreaPure templateContext "title" titleLayer setText
+  connectTextAreaPure templateContext "title" titleLayer Markup.setText'
 
   let layers = mkUndraggable $ mkLayers @Effect
         [ mkSomeLayer guillotine
