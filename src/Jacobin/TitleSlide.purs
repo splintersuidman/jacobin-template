@@ -142,6 +142,12 @@ main = void $ unsafePartial do
     { scaleX: ((templateWidth - 180.0 * templateResolution) - (templateWidth/2.0 + 285.0 * templateResolution)) / 1560.0, scaleY: 1.0 }
     (templateWidth - 180.0 * templateResolution)
 
+  guillotineWhite <- mkImageLayer
+    "./img/guillotinewit2x.png"
+    { x: 60.0 * templateResolution, y: 60.0 * templateResolution }
+    { scaleX: 1.0, scaleY: 1.0 }
+    Canvas.SourceOver
+
   logoRed <- mkImageLayer
     "./img/jacobinlogo.svg"
     { x: templateWidth - 120.0 * templateResolution, y: templateHeight - 200.0 * templateResolution }
@@ -271,6 +277,7 @@ main = void $ unsafePartial do
         , mkSomeLayer $ mkUndraggable logoRed
         , mkSomeLayer bigTitleAndAuthorLayer
         , mkSomeLayer $ mkUndraggableVertical overlayLayer
+        , mkSomeLayer $ mkUndraggable guillotineWhite
         , mkSomeLayer backgroundImageLayer 
         , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateDimensions.width, height: templateDimensions.height } "#f00"
         ]
