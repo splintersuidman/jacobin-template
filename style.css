@@ -2,7 +2,6 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap');
 
 #canvas {
-    max-width: 80vw;
     max-height: 80vh;
     object-fit: contain;
     touch-action: none;
@@ -38,6 +37,10 @@ textarea.input {
     #inputs {
         margin-left: 5vw;
     }
+
+    #canvas {
+        max-width: 60vw;
+    }
 }
 
 @media (max-width: 768px) {
@@ -47,6 +50,10 @@ textarea.input {
 
     #inputs {
         margin-top: 10vh;
+    }
+
+    #canvas {
+        max-width: 80vw;
     }
 }
 
