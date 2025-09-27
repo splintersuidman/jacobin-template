@@ -166,7 +166,7 @@ main = void $ unsafePartial do
 
   bodyTextLayer <- mkRefLayer $ MarkupTextLayer
     { text: []
-    , lineHeight: 0.95
+    , lineHeight: 1.1
     , position: { x: templateWidth - templateResolution * 60.0, y: templateResolution * 150.0 }
     , fillStyle: "#f00"
     , font:

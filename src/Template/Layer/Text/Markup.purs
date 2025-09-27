@@ -12,7 +12,7 @@ module Template.Layer.Text.Markup
 
 import Prelude
 
-import Data.Array (any, concat, concatMap, cons, length, scanl, singleton, snoc, splitAt, zip) as Array
+import Data.Array (any, concat, cons, length, scanl, singleton, snoc, splitAt, zip) as Array
 import Data.Array.Extra (enumerate) as Array
 import Data.Array.NonEmpty as NonEmpty
 import Data.Either (Either(..))
@@ -21,7 +21,7 @@ import Data.Int (toNumber)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String.CodeUnits (fromCharArray)
 import Data.String.Utils (lines, words) as String
-import Data.Traversable (traverse)
+import Data.Traversable (for, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
@@ -199,17 +199,17 @@ instance MonadEffect m => Layer m MarkupTextLayer where
     lines <- case l.maxWidth of
       Just maxWidth -> wrapLinesMarkup l.context l.font maxWidth l.text
       Nothing -> traverse (measureMarkupLineWidth l.context l.font) $ linesMarkup l.text
-    lineTextHeight <- measureMaxMarkupHeight l.context l.font $ Array.concat $ Array.concatMap forgetMarkupLine lines
 
-    pure $ flip Array.any (Array.enumerate lines) \(Tuple i { width }) -> do
+    cs <- for (Array.enumerate lines) \(Tuple i line@{ width }) -> do
+      lineTextHeight <- measureMaxMarkupHeight l.context l.font $ Array.concat $ forgetMarkupLine line
       -- XXX: support other baselines
       let
         lineY = case l.baseline of
-          BaselineTop -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
-          BaselineBottom -> l.position.y - lineTextHeight - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
-          _ -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
+          BaselineTop -> l.position.y + l.font.size * l.lineHeight * toNumber i
+          BaselineBottom -> l.position.y - lineTextHeight - toNumber (Array.length lines - i - 1) * l.font.size * l.lineHeight
+          _ -> l.position.y + l.font.size * l.lineHeight * toNumber i
 
-      case l.align of
+      pure $ case l.align of
         AlignStart -> l.position.x <= x
           && x <= l.position.x + width
           && lineY <= y
@@ -231,6 +231,8 @@ instance MonadEffect m => Layer m MarkupTextLayer where
           && lineY <= y
           && y <= lineY + lineTextHeight
 
+    pure $ Array.any identity cs
+
   dragStart offset (MarkupTextLayer layer) = pure $ MarkupTextLayer layer { dragOffset = Just offset }
   drag t l@(MarkupTextLayer layer) = dragTranslateMaybe layer.dragOffset t l
   dragEnd (MarkupTextLayer layer) = pure $ MarkupTextLayer layer { dragOffset = Nothing }
@@ -245,7 +247,6 @@ instance MonadEffect m => Layer m MarkupTextLayer where
     lines <- case l.maxWidth of
       Just maxWidth -> wrapLinesMarkup ctx l.font maxWidth l.text
       Nothing -> traverse (measureMarkupLineWidth ctx l.font) $ linesMarkup l.text
-    lineTextHeight <- measureMaxMarkupHeight ctx l.font $ Array.concat $ Array.concatMap forgetMarkupLine lines
 
     for_ (Array.enumerate lines) \(i /\ line) -> do
       -- XXX: support other baselines
@@ -255,9 +256,9 @@ instance MonadEffect m => Layer m MarkupTextLayer where
       -- block)
       let
         y = case l.baseline of
-          BaselineTop -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
-          BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
-          _ -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
+          BaselineTop -> l.position.y + toNumber i * l.font.size * l.lineHeight
+          BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * l.font.size * l.lineHeight
+          _ -> l.position.y + toNumber i * l.font.size * l.lineHeight
 
       let
         xMin = case l.align of
