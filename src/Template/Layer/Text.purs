@@ -131,7 +131,6 @@ measureTextHeight :: Context2D -> String -> Effect Number
 measureTextHeight ctx text = do
   metrics <- measureText ctx text
   -- XXX: measure based on alphabetic baseline?
-  -- pure $ metrics.width
   pure $ metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
 
 measureTextWidth :: Context2D -> String -> Effect Number

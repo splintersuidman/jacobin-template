@@ -68,6 +68,7 @@ main = void $ unsafePartial do
     , align: AlignLeft
     , baseline: BaselineTop
     , letterSpacing: "-3px"
+    , emptyLineHeight: 0.25
     , dragOffset: Nothing
     , maxWidth: Just $ templateWidth - 2.0 * 60.0 * templateResolution
     , context: canvasContext
@@ -109,6 +110,7 @@ main = void $ unsafePartial do
     , align: AlignLeft
     , baseline: BaselineTop
     , letterSpacing: "-2px"
+    , emptyLineHeight: 0.25
     , dragOffset: Nothing
     , context: canvasContext
     }

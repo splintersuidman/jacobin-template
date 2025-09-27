@@ -12,17 +12,16 @@ module Template.Layer.Text.Markup
 
 import Prelude
 
-import Data.Array (any, concat, cons, length, scanl, singleton, snoc, splitAt, zip) as Array
-import Data.Array.Extra (enumerate) as Array
+import Data.Array (all, any, concat, concatMap, cons, length, scanl, singleton, snoc, splitAt, zip) as Array
 import Data.Array.NonEmpty as NonEmpty
 import Data.Either (Either(..))
 import Data.Foldable (foldl, for_, maximum, sum)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (null) as String
 import Data.String.CodeUnits (fromCharArray)
 import Data.String.Utils (lines, words) as String
 import Data.Traversable (for, traverse)
-import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -35,6 +34,7 @@ import Parsing.Combinators ((<|>))
 import Parsing.Combinators.Array as Parser.Array
 import Parsing.String (char, eof, rest) as Parser
 import Parsing.String.Basic (noneOf) as Parser
+import Record as Record
 import Template.Layer (class Layer, DragOffset, Point, dragTranslateMaybe, translatePoint)
 import Template.Layer.Text as TextLayer
 
@@ -163,6 +163,7 @@ newtype MarkupTextLayer = MarkupTextLayer
   , align :: TextAlign
   , baseline :: TextBaseline
   , lineHeight :: Number
+  , emptyLineHeight :: Number
   , letterSpacing :: String
   , dragOffset :: Maybe DragOffset
   , context :: Context2D
@@ -191,45 +192,49 @@ instance MonadEffect m => Layer m MarkupTextLayer where
   -- TODO: take direction into account (for AlignStart and AlignEnd)
   containsPoint { x, y } (MarkupTextLayer l) = liftEffect $ withContext l.context do
     setFillStyle l.context l.fillStyle
-    setFont l.context $ l.font.style.normal <> " " <> l.font.weight.normal <> " " <> show l.font.size <> "px " <> l.font.name
     setTextBaseline l.context l.baseline
     setTextAlign l.context l.align
     setLetterSpacing l.context l.letterSpacing
 
-    lines <- case l.maxWidth of
+    lines' <- case l.maxWidth of
       Just maxWidth -> wrapLinesMarkup l.context l.font maxWidth l.text
       Nothing -> traverse (measureMarkupLineWidth l.context l.font) $ linesMarkup l.text
+    lines <- measureMarkupLineHeights l.context l.font l.emptyLineHeight lines'
 
-    cs <- for (Array.enumerate lines) \(Tuple i line@{ width }) -> do
-      lineTextHeight <- measureMaxMarkupHeight l.context l.font $ Array.concat $ forgetMarkupLine line
-      -- XXX: support other baselines
+    let
+      totalHeight = sum (map (_.height) $ lines) + (l.lineHeight - 1.0) * l.font.size * toNumber (Array.length lines - 1)
+      lineOffsets = Array.cons 0.0 $
+        Array.scanl (\offsetY { height } -> offsetY + height + (l.lineHeight - 1.0) * l.font.size) 0.0 lines
+
+    cs <- for (Array.zip lines lineOffsets) \({ width, height } /\ offsetY) -> do
+      -- XXX: support other baselines, cf. draw
       let
         lineY = case l.baseline of
-          BaselineTop -> l.position.y + l.font.size * l.lineHeight * toNumber i
-          BaselineBottom -> l.position.y - lineTextHeight - toNumber (Array.length lines - i - 1) * l.font.size * l.lineHeight
-          _ -> l.position.y + l.font.size * l.lineHeight * toNumber i
+          BaselineTop -> l.position.y + offsetY
+          BaselineBottom -> l.position.y + offsetY - totalHeight
+          _ -> l.position.y + offsetY
 
       pure $ case l.align of
         AlignStart -> l.position.x <= x
           && x <= l.position.x + width
           && lineY <= y
-          && y <= lineY + lineTextHeight
+          && y <= lineY + height
         AlignLeft -> l.position.x <= x
           && x <= l.position.x + width
           && lineY <= y
-          && y <= lineY + lineTextHeight
+          && y <= lineY + height
         AlignEnd -> l.position.x - width <= x
           && x <= l.position.x
           && lineY <= y
-          && y <= lineY + lineTextHeight
+          && y <= lineY + height
         AlignRight -> l.position.x - width <= x
           && x <= l.position.x
           && lineY <= y
-          && y <= lineY + lineTextHeight
+          && y <= lineY + height
         AlignCenter -> l.position.x - width / 2.0 <= x
           && x <= l.position.x + width / 2.0
           && lineY <= y
-          && y <= lineY + lineTextHeight
+          && y <= lineY + height
 
     pure $ Array.any identity cs
 
@@ -240,27 +245,31 @@ instance MonadEffect m => Layer m MarkupTextLayer where
   draw ctx (MarkupTextLayer l) = withContext ctx do
     setFillStyle ctx l.fillStyle
     setTextBaseline ctx l.baseline
-    --  Alignment is handled manually below
+    -- Alignment is handled manually below
     setTextAlign ctx AlignLeft
     setLetterSpacing ctx l.letterSpacing
 
-    lines <- case l.maxWidth of
+    lines' <- case l.maxWidth of
       Just maxWidth -> wrapLinesMarkup ctx l.font maxWidth l.text
       Nothing -> traverse (measureMarkupLineWidth ctx l.font) $ linesMarkup l.text
+    lines <- measureMarkupLineHeights ctx l.font l.emptyLineHeight lines'
 
-    for_ (Array.enumerate lines) \(i /\ line) -> do
-      -- XXX: support other baselines
-      -- XXX: maybe add another property indicating whether the text
-      -- should be anchored at the top or bottom, and use baseline
-      -- only for what fillText uses it for (per line instead of per
-      -- block)
+    let
+      totalHeight = sum (map (_.height) $ lines) + (l.lineHeight - 1.0) * l.font.size * toNumber (Array.length lines - 1)
+      lineOffsets = Array.cons 0.0 $
+        Array.scanl (\offsetY { height } -> offsetY + height + (l.lineHeight - 1.0) * l.font.size) 0.0 lines
+
+    for_ (Array.zip lines lineOffsets) \(line /\ offsetY) -> do
       let
+        -- XXX: support other baselines
+        -- XXX: maybe add another property indicating whether the text
+        -- should be anchored at the top or bottom, and use baseline
+        -- only for what fillText uses it for (per line instead of per
+        -- block)
         y = case l.baseline of
-          BaselineTop -> l.position.y + toNumber i * l.font.size * l.lineHeight
-          BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * l.font.size * l.lineHeight
-          _ -> l.position.y + toNumber i * l.font.size * l.lineHeight
-
-      let
+          BaselineTop -> l.position.y + offsetY
+          BaselineBottom -> l.position.y + offsetY - totalHeight + line.height
+          _ -> l.position.y + offsetY
         xMin = case l.align of
           AlignStart -> l.position.x
           AlignLeft -> l.position.x
@@ -269,10 +278,10 @@ instance MonadEffect m => Layer m MarkupTextLayer where
           AlignCenter -> l.position.x - line.width / 2.0
 
       spaceWidth <- measureSpaceWidth ctx l.font
-      let wordOffsets = Array.cons 0.0 $ Array.scanl (\offsetX word -> offsetX + spaceWidth + word.width) 0.0 line.line
+      let wordOffsets = Array.cons 0.0 $ Array.scanl (\offsetX { width } -> offsetX + spaceWidth + width) 0.0 line.line
 
       for_ (Array.zip line.line wordOffsets) \({ word } /\ wordOffsetX) -> do
-        let fragmentOffsets = Array.cons 0.0 $ Array.scanl (\offsetX fragment -> offsetX + fragment.width) 0.0 word
+        let fragmentOffsets = Array.cons 0.0 $ Array.scanl (\offsetX { width } -> offsetX + width) 0.0 word
         for_ (Array.zip word fragmentOffsets) \({ fragment } /\ fragmentOffsetX) -> do
           setMarkupFont ctx l.font fragment
           fillText ctx (textMarkup fragment) (xMin + wordOffsetX + fragmentOffsetX) y
@@ -304,6 +313,12 @@ measureMarkupHeight ctx font m@(Markup markup) = withContext ctx do
 measureMaxMarkupHeight :: Context2D -> Font -> Array Markup -> Effect Number
 measureMaxMarkupHeight ctx font lines = fromMaybe 0.0 <<< maximum <$> traverse (measureMarkupHeight ctx font) lines
 
+measureMarkupLineHeights :: Context2D -> Font -> Number -> Array MarkupLine -> Effect (Array (MarkupLineWith (height :: Number)))
+measureMarkupLineHeights ctx font emptyLineHeight lines = do
+  maxHeight <- measureMaxMarkupHeight ctx font $ Array.concat $ Array.concatMap forgetMarkupLine lines
+  pure $ lines <#> \line -> Record.merge line
+    { height: if nullMarkupLine line then emptyLineHeight * font.size else maxHeight }
+
 -- Markup fragment of a word with width
 type MarkupFragment = { fragment :: Markup, width :: Number }
 
@@ -312,6 +327,9 @@ mkMarkupFragment = { fragment: _, width: _ }
 
 forgetMarkupFragment :: MarkupFragment -> Markup
 forgetMarkupFragment { fragment } = fragment
+
+nullMarkupFragment :: MarkupFragment -> Boolean
+nullMarkupFragment { fragment } = String.null $ textMarkup fragment
 
 -- Markup word, e.g. "a_bc*de*f_", with total width
 type MarkupWord = { word :: Array MarkupFragment, width :: Number }
@@ -322,13 +340,21 @@ mkMarkupWord = { word: _, width: _ }
 forgetMarkupWord :: MarkupWord -> Array Markup
 forgetMarkupWord { word } = map forgetMarkupFragment word
 
-type MarkupLine = { line :: Array MarkupWord, width :: Number }
+nullMarkupWord :: MarkupWord -> Boolean
+nullMarkupWord { word } = Array.all nullMarkupFragment word
+
+type MarkupLineWith p = { line :: Array MarkupWord, width :: Number | p }
+
+type MarkupLine = MarkupLineWith ()
 
 mkMarkupLine :: Array MarkupWord -> Number -> MarkupLine
 mkMarkupLine = { line: _, width: _ }
 
-forgetMarkupLine :: MarkupLine -> Array (Array Markup)
+forgetMarkupLine :: forall p. MarkupLineWith p -> Array (Array Markup)
 forgetMarkupLine { line } = map forgetMarkupWord line
+
+nullMarkupLine :: forall p. MarkupLineWith p -> Boolean
+nullMarkupLine { line } = Array.all nullMarkupWord line
 
 measureMarkupFragmentWidth :: Context2D -> Font -> Markup -> Effect MarkupFragment
 measureMarkupFragmentWidth ctx font fragment = mkMarkupFragment fragment <$> measureMarkupWidth ctx font fragment
