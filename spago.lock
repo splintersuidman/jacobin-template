@@ -5,7 +5,6 @@
         "path": "./",
         "core": {
           "dependencies": [
-            "bound",
             "canvas",
             "console",
             "debug",
@@ -32,7 +31,6 @@
             "arraybuffer-types",
             "arrays",
             "bifunctors",
-            "bound",
             "canvas",
             "catenable-lists",
             "console",
@@ -718,17 +716,6 @@
         "newtype",
         "prelude",
         "tuples"
-      ]
-    },
-    "bound": {
-      "type": "registry",
-      "version": "0.6.0",
-      "integrity": "sha256-eKM/AmFSWr2CWHFPnt639ouYjkm6Kg1yF9NA3mnpN/U=",
-      "dependencies": [
-        "bifunctors",
-        "foldable-traversable",
-        "maybe",
-        "transformers"
       ]
     },
     "canvas": {

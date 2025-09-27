@@ -20,11 +20,12 @@ import Template.Layer.Layers (mkLayers)
 import Template.Layer.Rectangle (mkRectangleLayer)
 import Template.Layer.Ref (RefLayer, mkRefLayer)
 import Template.Layer.Ref as RefLayer
+import Template.Layer.Snap (mkSnapHorizontal, mkSnapVertical)
 import Template.Layer.Text (TextLayer(..))
 import Template.Layer.Text as TextLayer
 import Template.Layer.Text.Markup (MarkupTextLayer(..))
 import Template.Layer.Text.Markup as MarkupTextLayer
-import Template.Layer.Undraggable (mkUndraggable, mkUndraggableVertical)
+import Template.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal, mkUndraggableVertical)
 import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
@@ -183,7 +184,7 @@ main = void $ unsafePartial do
   connectTextAreaPure templateContext "bodytext" bodyTextLayer MarkupTextLayer.setText'
   connectMarkupTextSizeRange templateContext "bodytext-size" bodyTextLayer
 
-  let bigTitleAndAuthorPosition = { x: 60.0 * templateResolution, y: 800.0 * templateResolution }
+  let bigTitleAndAuthorPosition = { x: 60.0 * templateResolution, y: (150.0 + 100.0) * templateResolution }
   bigTitleLayer <- mkRefLayer $ MarkupTextLayer
     { text: []
     , lineHeight: 0.9
@@ -202,7 +203,7 @@ main = void $ unsafePartial do
     , dragOffset: Nothing
     , context: canvasContext
     }
-  connectTextAreaPure templateContext "title" bigTitleLayer MarkupTextLayer.setText'
+  connectTextAreaPure templateContext "title-left" bigTitleLayer MarkupTextLayer.setText'
   connectMarkupTextSizeRange templateContext "title-size" bigTitleLayer
 
   bigAuthorLayer <- mkRefLayer $ TextLayer
@@ -223,7 +224,7 @@ main = void $ unsafePartial do
     }
   connectInputPure templateContext "author" bigAuthorLayer TextLayer.setText
 
-  let bigTitleAndAuthorLayer = mkGroup @Effect
+  let bigTitleAndAuthorLayer = mkSnapVertical bigTitleAndAuthorPosition.y (50.0 * templateResolution) $ mkGroup @Effect
         [ mkSomeLayer bigTitleLayer
         , mkSomeLayer bigAuthorLayer
         ]
@@ -264,7 +265,7 @@ main = void $ unsafePartial do
     , dragOffset: Nothing
     , context: canvasContext
     }
-  connectTextAreaPure templateContext "title" smallTitleLayer MarkupTextLayer.setText'
+  connectTextAreaPure templateContext "title-right" smallTitleLayer MarkupTextLayer.setText'
 
   let overlayBackgroundLayer = mkOverlayBackgroundLayer
         { x: templateWidth/2.0 + 60.0 * templateResolution, y: 0.0 }
@@ -272,7 +273,7 @@ main = void $ unsafePartial do
         82.5
         "#fff"
 
-  let overlayLayer = OverlayLayer
+  let overlayLayer = mkSnapHorizontal (templateWidth/2.0) (60.0 * templateResolution) $ OverlayLayer
         { overlayBackground: overlayBackgroundLayer
         , guillotine: guillotine
         , bodyText: bodyTextLayer
@@ -283,7 +284,7 @@ main = void $ unsafePartial do
   let layers = mkLayers @Effect
         [ mkSomeLayer $ mkUndraggable logoWhite
         , mkSomeLayer $ mkUndraggable logoRed
-        , mkSomeLayer bigTitleAndAuthorLayer
+        , mkSomeLayer $ mkUndraggableHorizontal bigTitleAndAuthorLayer
         , mkSomeLayer $ mkUndraggableVertical overlayLayer
         , mkSomeLayer $ mkUndraggable guillotineWhite
         , mkSomeLayer backgroundImageLayer 

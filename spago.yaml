@@ -1,7 +1,6 @@
 package:
   name: jacobin-template
   dependencies:
-    - bound
     - canvas
     - console
     - debug
