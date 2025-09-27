@@ -1,8 +1,7 @@
 module Template.Layer.Rectangle
   ( RectangleLayer(..)
   , mkRectangleLayer
-  )
-  where
+  ) where
 
 import Prelude
 
@@ -24,14 +23,16 @@ instance Applicative m => Layer m RectangleLayer where
   position (RectangleLayer layer) = pure { x: layer.rect.x, y: layer.rect.y }
 
   translate { translateX, translateY } (RectangleLayer layer) = pure $ RectangleLayer layer
-    { rect { x = layer.rect.x + translateX
-           , y = layer.rect.y + translateY
-           }
+    { rect
+        { x = layer.rect.x + translateX
+        , y = layer.rect.y + translateY
+        }
     }
 
   containsPoint { x, y } (RectangleLayer { rect }) = pure
-     $ rect.x <= x && x <= rect.x + rect.width
-    && rect.y <= y && y <= rect.y + rect.height
+    $ rect.x <= x && x <= rect.x + rect.width
+        && rect.y <= y
+        && y <= rect.y + rect.height
 
   draw ctx (RectangleLayer layer) = do
     Canvas.setFillStyle ctx layer.fillStyle
@@ -43,7 +44,8 @@ instance Applicative m => Layer m RectangleLayer where
 
 instance Applicative m => Scalable m RectangleLayer where
   scale { scaleX, scaleY } (RectangleLayer l) = pure $ RectangleLayer l
-    { rect { width = l.rect.width * scaleX
-           , height = l.rect.height * scaleY
-           }
+    { rect
+        { width = l.rect.width * scaleX
+        , height = l.rect.height * scaleY
+        }
     }

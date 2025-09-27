@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
-import Graphics.Canvas (Context2D, ScaleTransform, TranslateTransform, Dimensions)
+import Graphics.Canvas (Context2D, Dimensions, ScaleTransform, TranslateTransform)
 
 type Point = { x :: Number, y :: Number }
 
@@ -53,8 +53,10 @@ instance Functor m => Layer m (SomeLayer m) where
 
 dragTranslate :: forall m l. Layer m l => DragOffset -> TranslateTransform -> l -> m l
 dragTranslate { offsetX, offsetY } { translateX, translateY } layer =
-  let translation = { translateX: translateX - offsetX, translateY: translateY - offsetY }
-  in translate translation layer
+  let
+    translation = { translateX: translateX - offsetX, translateY: translateY - offsetY }
+  in
+    translate translation layer
 
 dragTranslateMaybe :: forall m l. Applicative m => Layer m l => Maybe DragOffset -> TranslateTransform -> l -> m l
 dragTranslateMaybe Nothing _ layer = pure layer

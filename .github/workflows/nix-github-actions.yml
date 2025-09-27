@@ -44,6 +44,7 @@ jobs:
     name: Deploy site
     needs: nix-build
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
     steps:
       - name: Download results
         uses: actions/download-artifact@v5

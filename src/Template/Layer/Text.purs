@@ -13,7 +13,7 @@ import Prelude
 
 import Data.Array (any, concat, length, snoc, zip) as Array
 import Data.Array.Extra (enumerate) as Array
-import Data.Foldable (for_, maximum, foldl)
+import Data.Foldable (foldl, for_, maximum)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (joinWith) as String
@@ -75,22 +75,28 @@ instance MonadEffect m => Layer m TextLayer where
 
     pure $ flip Array.any (Array.enumerate widths) \(Tuple i width) -> do
       -- XXX: support other baselines
-      let lineY = case l.baseline of
-            BaselineTop    -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
-            BaselineBottom -> l.position.y - lineTextHeight - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
-            _              -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
+      let
+        lineY = case l.baseline of
+          BaselineTop -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
+          BaselineBottom -> l.position.y - lineTextHeight - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
+          _ -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
 
       case l.align of
-        AlignStart  -> l.position.x <= x && x <= l.position.x + width
-                    && lineY <= y && y <= lineY + lineTextHeight
-        AlignLeft   -> l.position.x <= x && x <= l.position.x + width
-                    && lineY <= y && y <= lineY + lineTextHeight
-        AlignEnd    -> l.position.x - width <= x && x <= l.position.x
-                    && lineY <= y && y <= lineY + lineTextHeight
-        AlignRight  -> l.position.x - width <= x && x <= l.position.x
-                    && lineY <= y && y <= lineY + lineTextHeight
-        AlignCenter -> l.position.x - width/2.0 <= x && x <= l.position.x + width/2.0
-                    && lineY <= y && y <= lineY + lineTextHeight
+        AlignStart -> l.position.x <= x && x <= l.position.x + width
+          && lineY <= y
+          && y <= lineY + lineTextHeight
+        AlignLeft -> l.position.x <= x && x <= l.position.x + width
+          && lineY <= y
+          && y <= lineY + lineTextHeight
+        AlignEnd -> l.position.x - width <= x && x <= l.position.x
+          && lineY <= y
+          && y <= lineY + lineTextHeight
+        AlignRight -> l.position.x - width <= x && x <= l.position.x
+          && lineY <= y
+          && y <= lineY + lineTextHeight
+        AlignCenter -> l.position.x - width / 2.0 <= x && x <= l.position.x + width / 2.0
+          && lineY <= y
+          && y <= lineY + lineTextHeight
 
   dragStart offset (TextLayer layer) = pure $ TextLayer layer { dragOffset = Just offset }
   drag t l@(TextLayer layer) = dragTranslateMaybe layer.dragOffset t l
@@ -114,10 +120,11 @@ instance MonadEffect m => Layer m TextLayer where
       -- should be anchored at the top or bottom, and use baseline
       -- only for what fillText uses it for (per line instead of per
       -- block)
-      let y = case l.baseline of
-            BaselineTop -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
-            BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
-            _ -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
+      let
+        y = case l.baseline of
+          BaselineTop -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
+          BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
+          _ -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
       fillText ctx line l.position.x y
 
 measureTextHeight :: Context2D -> String -> Effect Number
@@ -149,12 +156,12 @@ wrapLine ctx maxWidth text = do
   wordWidths <- traverse (measureTextWidth ctx) words
   spaceWidth <- measureTextWidth ctx " "
 
-  let go :: Array (Array String) /\ Array String /\ Number -> String /\ Number -> Array (Array String) /\ Array String /\ Number
-      go (lines /\ []   /\ _        ) (word /\ wordWidth) = lines /\ [word] /\ wordWidth
-      go (lines /\ line /\ lineWidth) (word /\ wordWidth) =
-        if lineWidth + spaceWidth + wordWidth > maxWidth
-        then Array.snoc lines line /\ [word] /\ wordWidth
-        else lines /\ Array.snoc line word /\ (lineWidth + spaceWidth + wordWidth)
+  let
+    go :: Array (Array String) /\ Array String /\ Number -> String /\ Number -> Array (Array String) /\ Array String /\ Number
+    go (lines /\ [] /\ _) (word /\ wordWidth) = lines /\ [ word ] /\ wordWidth
+    go (lines /\ line /\ lineWidth) (word /\ wordWidth) =
+      if lineWidth + spaceWidth + wordWidth > maxWidth then Array.snoc lines line /\ [ word ] /\ wordWidth
+      else lines /\ Array.snoc line word /\ (lineWidth + spaceWidth + wordWidth)
   let lines' /\ line /\ _ = foldl go ([] /\ [] /\ 0.0) (Array.zip words wordWidths)
   let lines = String.joinWith " " <$> lines'
 

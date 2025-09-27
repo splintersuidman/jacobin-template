@@ -1,7 +1,7 @@
 PREFIX		:= dist
 BUILDDIR	:= dist
 
-.PHONY		:= all install clean TextSlide TitleSlide
+.PHONY		:= all install clean format format-check TextSlide TitleSlide
 
 all: TextSlide TitleSlide
 
@@ -29,3 +29,11 @@ $(BUILDDIR)/img: img
 
 clean:
 	rm -r $(BUILDDIR)
+
+format:
+	spago sources | xargs purs-tidy generate-operators > .tidyoperators
+	purs-tidy format-in-place "src/**/*.purs"
+
+format-check:
+	spago sources | xargs purs-tidy generate-operators > .tidyoperators
+	purs-tidy check "src/**/*.purs"

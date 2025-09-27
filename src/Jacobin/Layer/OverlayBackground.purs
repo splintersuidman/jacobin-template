@@ -18,7 +18,7 @@ newtype OverlayBackgroundLayer = OverlayBackgroundLayer
   { position :: Point
   , dimensions :: Dimensions
   , angle :: Number
-    -- ^ Angle in degrees
+  -- ^ Angle in degrees
   , fillStyle :: String
   , dragOffset :: Maybe DragOffset
   }
@@ -38,8 +38,10 @@ instance Monad m => Layer m OverlayBackgroundLayer where
 
   containsPoint { x, y } (OverlayBackgroundLayer layer) = do
     let offsetX = (layer.dimensions.height - y) / Number.tan (degreesToRadians layer.angle)
-    pure $ layer.position.x + offsetX <= x && x <= layer.position.x + layer.dimensions.width
-        && layer.position.y <= y && y <= layer.position.y + layer.dimensions.height
+    pure $ layer.position.x + offsetX <= x
+      && x <= layer.position.x + layer.dimensions.width
+      && layer.position.y <= y
+      && y <= layer.position.y + layer.dimensions.height
 
   draw ctx (OverlayBackgroundLayer layer) = Canvas.withContext ctx do
     Canvas.setFillStyle ctx layer.fillStyle

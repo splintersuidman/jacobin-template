@@ -30,8 +30,8 @@ import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline(..), fillText, se
 import Graphics.Canvas.Extra (setLetterSpacing)
 import Parsing (ParseError, Parser)
 import Parsing (runParser) as Parser
-import Parsing.Combinators ((<|>))
 import Parsing.Combinators (between, try) as Parser
+import Parsing.Combinators ((<|>))
 import Parsing.Combinators.Array as Parser.Array
 import Parsing.String (char, eof, rest) as Parser
 import Parsing.String.Basic (noneOf) as Parser
@@ -39,6 +39,7 @@ import Template.Layer (class Layer, DragOffset, Point, dragTranslateMaybe, trans
 import Template.Layer.Text as TextLayer
 
 data FontStyle = StyleNormal | StyleItalic
+
 derive instance Eq FontStyle
 
 instance Show FontStyle where
@@ -46,6 +47,7 @@ instance Show FontStyle where
   show StyleItalic = "StyleItalic"
 
 data FontWeight = WeightNormal | WeightBold
+
 derive instance Eq FontWeight
 
 instance Show FontWeight where
@@ -57,6 +59,7 @@ newtype Markup = Markup
   , style :: FontStyle
   , weight :: FontWeight
   }
+
 derive instance Eq Markup
 
 instance Show Markup where
@@ -72,35 +75,35 @@ mkMarkupSplitter :: (String -> Array String) -> Array Markup -> Array (Array Mar
 mkMarkupSplitter splitter text = case foldl go { splits: [], split: [] } text of
   { splits, split } -> Array.snoc splits split
   where
-    go { splits, split } (Markup m) = case Array.splitAt 1 (splitter m.text) of
-      { before: [""], after: [] } -> { splits, split }
-      { before: [first], after: [] } -> { splits, split: Array.snoc split (Markup m { text = first }) }
-      { before: [""], after } -> case Array.splitAt (Array.length after - 1) after of
-        { before: splits', after: [""] } ->
-          { splits: Array.snoc splits split <> (splits' <#> \l -> [Markup m { text = l }])
-          , split: []
-          }
-        { before: splits', after: [last] } ->
-          { splits: Array.snoc splits split <> (splits' <#> \l -> [Markup m { text = l }])
-          , split: [Markup m { text = last }]
-          }
-        -- Impossible: Array.length after is positive
-        _ -> { splits, split }
-      { before: [first], after } -> case Array.splitAt (Array.length after - 1) after of
-        { before: splits', after: [""] } ->
-          { splits: Array.snoc splits (Array.snoc split (Markup m { text = first })) <>
-                    (splits' <#> \l -> [Markup m { text = l }])
-          , split: []
-          }
-        { before: splits', after: [last] } ->
-          { splits: Array.snoc splits (Array.snoc split (Markup m { text = first })) <>
-                    (splits' <#> \l -> [Markup m { text = l }])
-          , split: [Markup m { text = last }]
-          }
-        -- Impossible: Array.length after is positive
-        _ -> { splits, split }
-      -- Impossible: Array.length >>> String.splits has positive range
+  go { splits, split } (Markup m) = case Array.splitAt 1 (splitter m.text) of
+    { before: [ "" ], after: [] } -> { splits, split }
+    { before: [ first ], after: [] } -> { splits, split: Array.snoc split (Markup m { text = first }) }
+    { before: [ "" ], after } -> case Array.splitAt (Array.length after - 1) after of
+      { before: splits', after: [ "" ] } ->
+        { splits: Array.snoc splits split <> (splits' <#> \l -> [ Markup m { text = l } ])
+        , split: []
+        }
+      { before: splits', after: [ last ] } ->
+        { splits: Array.snoc splits split <> (splits' <#> \l -> [ Markup m { text = l } ])
+        , split: [ Markup m { text = last } ]
+        }
+      -- Impossible: Array.length after is positive
       _ -> { splits, split }
+    { before: [ first ], after } -> case Array.splitAt (Array.length after - 1) after of
+      { before: splits', after: [ "" ] } ->
+        { splits: Array.snoc splits (Array.snoc split (Markup m { text = first })) <>
+            (splits' <#> \l -> [ Markup m { text = l } ])
+        , split: []
+        }
+      { before: splits', after: [ last ] } ->
+        { splits: Array.snoc splits (Array.snoc split (Markup m { text = first })) <>
+            (splits' <#> \l -> [ Markup m { text = l } ])
+        , split: [ Markup m { text = last } ]
+        }
+      -- Impossible: Array.length after is positive
+      _ -> { splits, split }
+    -- Impossible: Array.length >>> String.splits has positive range
+    _ -> { splits, split }
 
 wordsMarkup :: Array Markup -> Array (Array Markup)
 wordsMarkup = mkMarkupSplitter String.words
@@ -116,33 +119,33 @@ bold (Markup m) = Markup m { weight = WeightBold }
 
 markupParser :: Parser String (Array Markup)
 markupParser = map (Array.concat <<< NonEmpty.toArray) $ Parser.Array.many1 $
-      italicBoldP
-  <|> boldItalicP
-  <|> Array.singleton <$> normal
+  italicBoldP
+    <|> boldItalicP
+    <|> Array.singleton <$> normal
 
 many1' :: forall s a. Parser s a -> Parser s (Array a)
 many1' = map NonEmpty.toArray <<< Parser.Array.many1
 
 normal :: Parser String Markup
-normal = mkMarkupNormal <<< fromCharArray <$> many1' (Parser.noneOf ['_', '*'])
+normal = mkMarkupNormal <<< fromCharArray <$> many1' (Parser.noneOf [ '_', '*' ])
 
 italicBoldP :: Parser String (Array Markup)
-italicBoldP =  Parser.try (Parser.between (Parser.char '_') (Parser.char '_') $ map italic <$> many1' boldP)
-           <|> Parser.char '_' *> ([] <$ Parser.eof <|> map italic <$> many1' boldP)
+italicBoldP = Parser.try (Parser.between (Parser.char '_') (Parser.char '_') $ map italic <$> many1' boldP)
+  <|> Parser.char '_' *> ([] <$ Parser.eof <|> map italic <$> many1' boldP)
 
 boldP :: Parser String Markup
-boldP =  Parser.try (Parser.between (Parser.char '*') (Parser.char '*') $ bold <$> normal)
-     <|> normal
-     <|> Parser.char '*' *> (bold <<< mkMarkupNormal <$> Parser.rest)
+boldP = Parser.try (Parser.between (Parser.char '*') (Parser.char '*') $ bold <$> normal)
+  <|> normal
+  <|> Parser.char '*' *> (bold <<< mkMarkupNormal <$> Parser.rest)
 
 boldItalicP :: Parser String (Array Markup)
-boldItalicP =  Parser.try (Parser.between (Parser.char '*') (Parser.char '*') $ map bold <$> many1' italicP)
-           <|> Parser.char '*' *> ([] <$ Parser.eof <|> map bold <$> many1' italicP)
+boldItalicP = Parser.try (Parser.between (Parser.char '*') (Parser.char '*') $ map bold <$> many1' italicP)
+  <|> Parser.char '*' *> ([] <$ Parser.eof <|> map bold <$> many1' italicP)
 
 italicP :: Parser String Markup
-italicP =  Parser.try (Parser.between (Parser.char '_') (Parser.char '_') $ italic <$> normal)
-       <|> normal
-       <|> Parser.char '_' *> (italic <<< mkMarkupNormal <$> Parser.rest)
+italicP = Parser.try (Parser.between (Parser.char '_') (Parser.char '_') $ italic <$> normal)
+  <|> normal
+  <|> Parser.char '_' *> (italic <<< mkMarkupNormal <$> Parser.rest)
 
 type Font =
   { name :: String
@@ -172,7 +175,7 @@ setText text (MarkupTextLayer l) = Parser.runParser text markupParser <#> \marku
 setText' :: String -> MarkupTextLayer -> MarkupTextLayer
 setText' text (MarkupTextLayer l) = case Parser.runParser text markupParser of
   Right markup -> MarkupTextLayer l { text = markup }
-  Left _err -> MarkupTextLayer l { text = [Markup { text, style: StyleNormal, weight: WeightNormal }] }
+  Left _err -> MarkupTextLayer l { text = [ Markup { text, style: StyleNormal, weight: WeightNormal } ] }
 
 setFontSize :: Number -> MarkupTextLayer -> MarkupTextLayer
 setFontSize fontSize (MarkupTextLayer l) = MarkupTextLayer l { font { size = fontSize } }
@@ -200,22 +203,33 @@ instance MonadEffect m => Layer m MarkupTextLayer where
 
     pure $ flip Array.any (Array.enumerate lines) \(Tuple i { width }) -> do
       -- XXX: support other baselines
-      let lineY = case l.baseline of
-            BaselineTop    -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
-            BaselineBottom -> l.position.y - lineTextHeight - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
-            _              -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
+      let
+        lineY = case l.baseline of
+          BaselineTop -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
+          BaselineBottom -> l.position.y - lineTextHeight - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
+          _ -> l.position.y + lineTextHeight * l.lineHeight * toNumber i
 
       case l.align of
-        AlignStart  -> l.position.x <= x && x <= l.position.x + width
-                    && lineY <= y && y <= lineY + lineTextHeight
-        AlignLeft   -> l.position.x <= x && x <= l.position.x + width
-                    && lineY <= y && y <= lineY + lineTextHeight
-        AlignEnd    -> l.position.x - width <= x && x <= l.position.x
-                    && lineY <= y && y <= lineY + lineTextHeight
-        AlignRight  -> l.position.x - width <= x && x <= l.position.x
-                    && lineY <= y && y <= lineY + lineTextHeight
-        AlignCenter -> l.position.x - width/2.0 <= x && x <= l.position.x + width/2.0
-                    && lineY <= y && y <= lineY + lineTextHeight
+        AlignStart -> l.position.x <= x
+          && x <= l.position.x + width
+          && lineY <= y
+          && y <= lineY + lineTextHeight
+        AlignLeft -> l.position.x <= x
+          && x <= l.position.x + width
+          && lineY <= y
+          && y <= lineY + lineTextHeight
+        AlignEnd -> l.position.x - width <= x
+          && x <= l.position.x
+          && lineY <= y
+          && y <= lineY + lineTextHeight
+        AlignRight -> l.position.x - width <= x
+          && x <= l.position.x
+          && lineY <= y
+          && y <= lineY + lineTextHeight
+        AlignCenter -> l.position.x - width / 2.0 <= x
+          && x <= l.position.x + width / 2.0
+          && lineY <= y
+          && y <= lineY + lineTextHeight
 
   dragStart offset (MarkupTextLayer layer) = pure $ MarkupTextLayer layer { dragOffset = Just offset }
   drag t l@(MarkupTextLayer layer) = dragTranslateMaybe layer.dragOffset t l
@@ -239,17 +253,19 @@ instance MonadEffect m => Layer m MarkupTextLayer where
       -- should be anchored at the top or bottom, and use baseline
       -- only for what fillText uses it for (per line instead of per
       -- block)
-      let y = case l.baseline of
-            BaselineTop -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
-            BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
-            _ -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
+      let
+        y = case l.baseline of
+          BaselineTop -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
+          BaselineBottom -> l.position.y - toNumber (Array.length lines - i - 1) * lineTextHeight * l.lineHeight
+          _ -> l.position.y + toNumber i * lineTextHeight * l.lineHeight
 
-      let xMin = case l.align of
-            AlignStart -> l.position.x
-            AlignLeft -> l.position.x
-            AlignEnd -> l.position.x - line.width
-            AlignRight -> l.position.x - line.width
-            AlignCenter -> l.position.x - line.width/2.0
+      let
+        xMin = case l.align of
+          AlignStart -> l.position.x
+          AlignLeft -> l.position.x
+          AlignEnd -> l.position.x - line.width
+          AlignRight -> l.position.x - line.width
+          AlignCenter -> l.position.x - line.width / 2.0
 
       spaceWidth <- measureSpaceWidth ctx l.font
       let wordOffsets = Array.cons 0.0 $ Array.scanl (\offsetX word -> offsetX + spaceWidth + word.width) 0.0 line.line
@@ -262,12 +278,13 @@ instance MonadEffect m => Layer m MarkupTextLayer where
 
 setMarkupFont :: Context2D -> Font -> Markup -> Effect Unit
 setMarkupFont ctx font (Markup text) = do
-  let style = case text.style of
-        StyleNormal -> font.style.normal
-        StyleItalic -> font.style.italic
-      weight = case text.weight of
-        WeightNormal -> font.weight.normal
-        WeightBold -> font.weight.bold
+  let
+    style = case text.style of
+      StyleNormal -> font.style.normal
+      StyleItalic -> font.style.italic
+    weight = case text.weight of
+      WeightNormal -> font.weight.normal
+      WeightBold -> font.weight.bold
   setFont ctx $ style <> " " <> weight <> " " <> show font.size <> "px " <> font.name
 
 measureMarkupWidth :: Context2D -> Font -> Markup -> Effect Number
@@ -326,8 +343,9 @@ measureMarkupLineWidth ctx font text = do
   let words = wordsMarkup text
   line <- traverse (measureMarkupWordWidth ctx font) words
   spaceWidth <- measureSpaceWidth ctx font
-  let width = spaceWidth * toNumber (Array.length line - 1)
-            + sum (map (_.width) line)
+  let
+    width = spaceWidth * toNumber (Array.length line - 1)
+      + sum (map (_.width) line)
   pure { line, width }
 
 snocMarkupLine :: Number -> MarkupLine -> MarkupWord -> MarkupLine
@@ -345,12 +363,12 @@ wrapLineMarkup ctx font maxWidth text = do
   wordsAndWidths <- traverse (measureMarkupWordWidth ctx font) words
   spaceWidth <- measureSpaceWidth ctx font
 
-  let go :: Array MarkupLine /\ MarkupLine -> MarkupWord -> Array MarkupLine /\ MarkupLine
-      go (lines /\ { line: [] }) word = lines /\ { line: [word], width: word.width }
-      go (lines /\ line) word =
-        if line.width + spaceWidth + word.width > maxWidth
-        then Array.snoc lines line /\ { line: [word], width: word.width }
-        else lines /\ snocMarkupLine spaceWidth line word
+  let
+    go :: Array MarkupLine /\ MarkupLine -> MarkupWord -> Array MarkupLine /\ MarkupLine
+    go (lines /\ { line: [] }) word = lines /\ { line: [ word ], width: word.width }
+    go (lines /\ line) word =
+      if line.width + spaceWidth + word.width > maxWidth then Array.snoc lines line /\ { line: [ word ], width: word.width }
+      else lines /\ snocMarkupLine spaceWidth line word
   let lines /\ line = foldl go ([] /\ { line: [], width: 0.0 }) wordsAndWidths
 
   case line of

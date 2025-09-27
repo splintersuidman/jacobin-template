@@ -1,13 +1,13 @@
 module Template.Layer.Snap
-  ( dragSnapHorizontal 
-  , dragTranslateSnapHorizontal 
-  , dragTranslateSnapHorizontalMaybe 
-  , dragSnapVertical 
-  , dragTranslateSnapVertical 
-  , dragTranslateSnapVerticalMaybe 
-  , dragSnap 
-  , dragTranslateSnap 
-  , dragTranslateSnapMaybe 
+  ( dragSnapHorizontal
+  , dragTranslateSnapHorizontal
+  , dragTranslateSnapHorizontalMaybe
+  , dragSnapVertical
+  , dragTranslateSnapVertical
+  , dragTranslateSnapVerticalMaybe
+  , dragSnap
+  , dragTranslateSnap
+  , dragTranslateSnapMaybe
   , SnapHorizontal(..)
   , mkSnapHorizontal
   , SnapVertical(..)

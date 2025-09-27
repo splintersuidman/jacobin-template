@@ -74,8 +74,10 @@ instance MonadEffect m => Layer m ImageLayer where
     case image of
       Nothing -> pure false
       Just source -> pure
-        $  i.position.x <= x && x <= i.position.x + Canvas.canvasImageSourceWidth source * i.scale.scaleX
-        && i.position.y <= y && y <= i.position.y + Canvas.canvasImageSourceHeight source * i.scale.scaleY
+        $ i.position.x <= x
+            && x <= i.position.x + Canvas.canvasImageSourceWidth source * i.scale.scaleX
+            && i.position.y <= y
+            && y <= i.position.y + Canvas.canvasImageSourceHeight source * i.scale.scaleY
 
   dragStart offset (ImageLayer i) = pure $ ImageLayer i { dragOffset = Just offset }
   drag translation layer@(ImageLayer i) = dragTranslateMaybe i.dragOffset translation layer
@@ -87,8 +89,9 @@ instance MonadEffect m => Layer m ImageLayer where
       Nothing -> pure unit
       Just source -> Canvas.withContext ctx do
         Canvas.setGlobalCompositeOperation ctx i.composite
-        Canvas.drawImageDimensions ctx source i.position $
-          scaleDimensions i.scale $ Canvas.canvasImageSourceDimensions source
+        Canvas.drawImageDimensions ctx source i.position
+          $ scaleDimensions i.scale
+          $ Canvas.canvasImageSourceDimensions source
 
 instance MonadEffect m => Scalable m ImageLayer where
   scale s (ImageLayer i) = pure $ ImageLayer i { scale = s * i.scale }

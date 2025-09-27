@@ -29,7 +29,7 @@ import Template.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal, mkUnd
 import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
-instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0/4.0 }
+instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0 / 4.0 }
 
 templateResolution :: Number
 templateResolution = 2.0
@@ -55,7 +55,7 @@ newtype GuillotineLayer = GuillotineLayer
 mkGuillotineLayer :: forall m. MonadEffect m => String -> Point -> ScaleTransform -> Number -> m GuillotineLayer
 mkGuillotineLayer path position scale xMax = do
   guillotine <- mkImageLayer path position scale Canvas.SourceOver
-  pure $ GuillotineLayer { guillotine , xMax }
+  pure $ GuillotineLayer { guillotine, xMax }
 
 instance MonadEffect m => Layer m GuillotineLayer where
   position (GuillotineLayer l) = position l.guillotine
@@ -63,9 +63,10 @@ instance MonadEffect m => Layer m GuillotineLayer where
     x' <- (_ + translateX) <<< (_.x) <$> position l.guillotine
     dimensions <- ImageLayer.dimensions l.guillotine
     let scaleY = (ImageLayer.getScale l.guillotine).scaleY
-    let guillotine' = case dimensions of
-          Just { width } | width /= 0.0 -> ImageLayer.setScale { scaleX: (l.xMax - x') / width, scaleY } l.guillotine
-          _ -> l.guillotine
+    let
+      guillotine' = case dimensions of
+        Just { width } | width /= 0.0 -> ImageLayer.setScale { scaleX: (l.xMax - x') / width, scaleY } l.guillotine
+        _ -> l.guillotine
     guillotine <- translate t guillotine'
     pure $ GuillotineLayer l { guillotine = guillotine }
 
@@ -137,12 +138,12 @@ main = void $ unsafePartial do
 
   backgroundImageLayer <- mkRefLayer =<< mkEmptyImageLayer { x: 0.0, y: 0.0 } { scaleX: 1.0, scaleY: 1.0 } Canvas.SourceOver
   connectObjectUrlInput templateContext "image" backgroundImageLayer ImageLayer.loadImage
-  connectScaleRange templateContext "image-size" backgroundImageLayer 
+  connectScaleRange templateContext "image-size" backgroundImageLayer
 
-  guillotine <- mkGuillotineLayer 
+  guillotine <- mkGuillotineLayer
     "./img/guillotine2x.png"
-    { x: templateWidth/2.0 + 285.0 * templateResolution, y: 60.0 * templateResolution }
-    { scaleX: ((templateWidth - 180.0 * templateResolution) - (templateWidth/2.0 + 285.0 * templateResolution)) / 1560.0, scaleY: 1.0 }
+    { x: templateWidth / 2.0 + 285.0 * templateResolution, y: 60.0 * templateResolution }
+    { scaleX: ((templateWidth - 180.0 * templateResolution) - (templateWidth / 2.0 + 285.0 * templateResolution)) / 1560.0, scaleY: 1.0 }
     (templateWidth - 180.0 * templateResolution)
 
   guillotineWhite <- mkImageLayer
@@ -159,7 +160,7 @@ main = void $ unsafePartial do
 
   logoWhite <- mkImageLayer
     "./img/jacobinlogowit.svg"
-    { x: templateWidth/2.0 - 120.0 * templateResolution, y: templateHeight - 200.0 * templateResolution }
+    { x: templateWidth / 2.0 - 120.0 * templateResolution, y: templateHeight - 200.0 * templateResolution }
     templateResolutionScale
     Canvas.SourceOver
 
@@ -169,16 +170,16 @@ main = void $ unsafePartial do
     , position: { x: templateWidth - templateResolution * 60.0, y: templateResolution * 150.0 }
     , fillStyle: "#f00"
     , font:
-      { name: "Oswald"
-      , style: { normal: "normal", italic: "italic" }
-      , weight: { normal: "500", bold: "700" }
-      , size: 90.0 * templateResolution
-      }
+        { name: "Oswald"
+        , style: { normal: "normal", italic: "italic" }
+        , weight: { normal: "500", bold: "700" }
+        , size: 90.0 * templateResolution
+        }
     , align: AlignRight
     , baseline: BaselineTop
     , letterSpacing: "-3px"
     , dragOffset: Nothing
-    , maxWidth: Just $ templateWidth/2.0 - 2.0 * 60.0 * templateResolution
+    , maxWidth: Just $ templateWidth / 2.0 - 2.0 * 60.0 * templateResolution
     , context: canvasContext
     }
   connectTextAreaPure templateContext "bodytext" bodyTextLayer MarkupTextLayer.setText'
@@ -189,14 +190,14 @@ main = void $ unsafePartial do
     { text: []
     , lineHeight: 0.9
     , position: bigTitleAndAuthorPosition
-    , maxWidth: Just $ templateWidth/2.0 - 2.0 * 60.0 * templateResolution
+    , maxWidth: Just $ templateWidth / 2.0 - 2.0 * 60.0 * templateResolution
     , fillStyle: "#fff"
     , font:
-      { name: "Oswald"
-      , style: { normal: "normal", italic: "italic" }
-      , weight: { normal: "700", bold: "700" }
-      , size: 100.0 * templateResolution
-      }
+        { name: "Oswald"
+        , style: { normal: "normal", italic: "italic" }
+        , weight: { normal: "700", bold: "700" }
+        , size: 100.0 * templateResolution
+        }
     , align: AlignLeft
     , baseline: BaselineBottom
     , letterSpacing: "-2px"
@@ -224,15 +225,16 @@ main = void $ unsafePartial do
     }
   connectInputPure templateContext "author" bigAuthorLayer TextLayer.setText
 
-  let bigTitleAndAuthorLayer = mkSnapVertical bigTitleAndAuthorPosition.y (50.0 * templateResolution) $ mkGroup @Effect
-        [ mkSomeLayer bigTitleLayer
-        , mkSomeLayer bigAuthorLayer
-        ]
+  let
+    bigTitleAndAuthorLayer = mkSnapVertical bigTitleAndAuthorPosition.y (50.0 * templateResolution) $ mkGroup @Effect
+      [ mkSomeLayer bigTitleLayer
+      , mkSomeLayer bigAuthorLayer
+      ]
 
   smallAuthorLayer <- mkRefLayer $ TextLayer
     { text: "AUTEUR"
     , lineHeight: 0.95
-    , position: { x: templateWidth/2.0 + 128.0 * templateResolution, y: templateHeight - 200.0 * templateResolution }
+    , position: { x: templateWidth / 2.0 + 128.0 * templateResolution, y: templateHeight - 200.0 * templateResolution }
     , fillStyle: "#f00"
     , fontName: "Oswald"
     , fontStyle: "normal"
@@ -250,15 +252,15 @@ main = void $ unsafePartial do
   smallTitleLayer <- mkRefLayer $ MarkupTextLayer
     { text: []
     , lineHeight: 0.9
-    , position: { x: templateWidth/2.0 + 128.0 * templateResolution, y: templateHeight - 200.0 * templateResolution + 50.0 * templateResolution }
-    , maxWidth: Just $ templateWidth/2.0 - (128.0 + 2.0 * 60.0 + 20.0) * templateResolution
+    , position: { x: templateWidth / 2.0 + 128.0 * templateResolution, y: templateHeight - 200.0 * templateResolution + 50.0 * templateResolution }
+    , maxWidth: Just $ templateWidth / 2.0 - (128.0 + 2.0 * 60.0 + 20.0) * templateResolution
     , fillStyle: "#f00"
     , font:
-      { name: "Oswald"
-      , style: { normal: "normal", italic: "italic" }
-      , weight: { normal: "500", bold: "700" }
-      , size: 50.0 * templateResolution
-      }
+        { name: "Oswald"
+        , style: { normal: "normal", italic: "italic" }
+        , weight: { normal: "500", bold: "700" }
+        , size: 50.0 * templateResolution
+        }
     , align: AlignLeft
     , baseline: BaselineTop
     , letterSpacing: "-2px"
@@ -267,33 +269,36 @@ main = void $ unsafePartial do
     }
   connectTextAreaPure templateContext "title-right" smallTitleLayer MarkupTextLayer.setText'
 
-  let overlayBackgroundLayer = mkOverlayBackgroundLayer
-        { x: templateWidth/2.0 + 60.0 * templateResolution, y: 0.0 }
-        { width: templateWidth, height: templateHeight }
-        82.5
-        "#fff"
+  let
+    overlayBackgroundLayer = mkOverlayBackgroundLayer
+      { x: templateWidth / 2.0 + 60.0 * templateResolution, y: 0.0 }
+      { width: templateWidth, height: templateHeight }
+      82.5
+      "#fff"
 
-  let overlayLayer = mkSnapHorizontal (templateWidth/2.0) (60.0 * templateResolution) $ OverlayLayer
-        { overlayBackground: overlayBackgroundLayer
-        , guillotine: guillotine
-        , bodyText: bodyTextLayer
-        , author: smallAuthorLayer
-        , title: smallTitleLayer
-        }
+  let
+    overlayLayer = mkSnapHorizontal (templateWidth / 2.0) (60.0 * templateResolution) $ OverlayLayer
+      { overlayBackground: overlayBackgroundLayer
+      , guillotine: guillotine
+      , bodyText: bodyTextLayer
+      , author: smallAuthorLayer
+      , title: smallTitleLayer
+      }
 
-  let layers = mkLayers @Effect
-        [ mkSomeLayer $ mkUndraggable logoWhite
-        , mkSomeLayer $ mkUndraggable logoRed
-        , mkSomeLayer $ mkUndraggableHorizontal bigTitleAndAuthorLayer
-        , mkSomeLayer $ mkUndraggableVertical overlayLayer
-        , mkSomeLayer $ mkUndraggable guillotineWhite
-        , mkSomeLayer backgroundImageLayer 
-        , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateDimensions.width, height: templateDimensions.height } "#f00"
-        ]
+  let
+    layers = mkLayers @Effect
+      [ mkSomeLayer $ mkUndraggable logoWhite
+      , mkSomeLayer $ mkUndraggable logoRed
+      , mkSomeLayer $ mkUndraggableHorizontal bigTitleAndAuthorLayer
+      , mkSomeLayer $ mkUndraggableVertical overlayLayer
+      , mkSomeLayer $ mkUndraggable guillotineWhite
+      , mkSomeLayer backgroundImageLayer
+      , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateDimensions.width, height: templateDimensions.height } "#f00"
+      ]
 
   template <- mkTemplate templateContext layers
   redraw template
   addEventListeners template
-  Just _ <- mkDownloadButtonClip "download-left" "jacobin-titel-links.png" { x: 0.0, y: 0.0, width: templateWidth/2.0, height: templateHeight } template
-  Just _ <- mkDownloadButtonClip "download-right" "jacobin-titel-rechts.png" { x: templateWidth/2.0, y: 0.0, width: templateWidth/2.0, height: templateHeight } template
+  Just _ <- mkDownloadButtonClip "download-left" "jacobin-titel-links.png" { x: 0.0, y: 0.0, width: templateWidth / 2.0, height: templateHeight } template
+  Just _ <- mkDownloadButtonClip "download-right" "jacobin-titel-rechts.png" { x: templateWidth / 2.0, y: 0.0, width: templateWidth / 2.0, height: templateHeight } template
   pure unit

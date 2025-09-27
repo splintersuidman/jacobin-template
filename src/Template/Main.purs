@@ -174,91 +174,92 @@ mkDownloadButtonClip buttonId filename clip template = runMaybeT do
     Html.click linkHtmlElement
   lift $ Event.addEventListener (EventType "click") clickListener false $ Dom.toEventTarget downloadButtonElement
   pure downloadButtonElement
+
 mkMousedownListener :: Template -> Effect EventListener
 mkMousedownListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
-    Nothing -> pure unit
-    Just mouseEvent -> do
+  Nothing -> pure unit
+  Just mouseEvent -> do
+    pos <- Layer.position template.layer
+    { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
+      { x: toNumber $ MouseEvent.clientX mouseEvent
+      , y: toNumber $ MouseEvent.clientY mouseEvent
+      }
+    let offset = { offsetX: x - pos.x, offsetY: y - pos.y }
+    _ <- Layer.dragStart offset template.layer
+    redraw template
+
+mkTouchstartListener :: Template -> Effect EventListener
+mkTouchstartListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
+  Nothing -> pure unit
+  Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
+    Nothing -> redraw template
+    Just touch -> do
       pos <- Layer.position template.layer
       { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
-        { x: toNumber $ MouseEvent.clientX mouseEvent
-        , y: toNumber $ MouseEvent.clientY mouseEvent
+        { x: toNumber $ Touch.clientX touch
+        , y: toNumber $ Touch.clientY touch
         }
       let offset = { offsetX: x - pos.x, offsetY: y - pos.y }
       _ <- Layer.dragStart offset template.layer
       redraw template
 
-mkTouchstartListener :: Template -> Effect EventListener
-mkTouchstartListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
-    Nothing -> pure unit
-    Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
-      Nothing -> redraw template
-      Just touch ->  do
-        pos <- Layer.position template.layer
-        { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
-            { x: toNumber $ Touch.clientX touch
-            , y: toNumber $ Touch.clientY touch
-            }
-        let offset = { offsetX: x - pos.x, offsetY: y - pos.y }
-        _ <- Layer.dragStart offset template.layer
-        redraw template
-
 mkMousemoveListener :: Template -> Effect EventListener
 mkMousemoveListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
-    Nothing -> pure unit
-    Just mouseEvent -> do
+  Nothing -> pure unit
+  Just mouseEvent -> do
+    pos <- Layer.position template.layer
+    { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
+      { x: toNumber $ MouseEvent.clientX mouseEvent
+      , y: toNumber $ MouseEvent.clientY mouseEvent
+      }
+    let translation = { translateX: x - pos.x, translateY: y - pos.y }
+    _ <- Layer.drag translation template.layer
+    redraw template
+
+mkTouchmoveListener :: Template -> Effect EventListener
+mkTouchmoveListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
+  Nothing -> pure unit
+  Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
+    Nothing -> redraw template
+    Just touch -> do
       pos <- Layer.position template.layer
       { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
-        { x: toNumber $ MouseEvent.clientX mouseEvent
-        , y: toNumber $ MouseEvent.clientY mouseEvent
+        { x: toNumber $ Touch.clientX touch
+        , y: toNumber $ Touch.clientY touch
         }
       let translation = { translateX: x - pos.x, translateY: y - pos.y }
       _ <- Layer.drag translation template.layer
       redraw template
 
-mkTouchmoveListener :: Template -> Effect EventListener
-mkTouchmoveListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
-    Nothing -> pure unit
-    Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
-      Nothing -> redraw template
-      Just touch ->  do
-        pos <- Layer.position template.layer
-        { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
-            { x: toNumber $ Touch.clientX touch
-            , y: toNumber $ Touch.clientY touch
-            }
-        let translation = { translateX: x - pos.x, translateY: y - pos.y }
-        _ <- Layer.drag translation template.layer
-        redraw template
-
 mkMouseupListener :: Template -> Effect EventListener
 mkMouseupListener template = Event.eventListener \event -> case MouseEvent.fromEvent event of
-    Nothing -> pure unit
-    Just mouseEvent -> do
+  Nothing -> pure unit
+  Just mouseEvent -> do
+    pos <- Layer.position template.layer
+    { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
+      { x: toNumber $ MouseEvent.clientX mouseEvent
+      , y: toNumber $ MouseEvent.clientY mouseEvent
+      }
+    let translation = { translateX: x - pos.x, translateY: y - pos.y }
+    _ <- Layer.drag translation template.layer
+    _ <- Layer.dragEnd template.layer
+    redraw template
+
+mkTouchendListener :: Template -> Effect EventListener
+mkTouchendListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
+  Nothing -> pure unit
+  Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
+    Nothing -> redraw template
+    Just touch -> do
       pos <- Layer.position template.layer
       { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
-        { x: toNumber $ MouseEvent.clientX mouseEvent
-        , y: toNumber $ MouseEvent.clientY mouseEvent
+        { x: toNumber $ Touch.clientX touch
+        , y: toNumber $ Touch.clientY touch
         }
       let translation = { translateX: x - pos.x, translateY: y - pos.y }
       _ <- Layer.drag translation template.layer
       _ <- Layer.dragEnd template.layer
       redraw template
-
-mkTouchendListener :: Template -> Effect EventListener
-mkTouchendListener template = Event.eventListener \event -> case TouchEvent.fromEvent event of
-    Nothing -> pure unit
-    Just touchEvent -> case TouchList.item 0 (TouchEvent.touches touchEvent) of
-      Nothing -> redraw template
-      Just touch ->  do
-        pos <- Layer.position template.layer
-        { x, y } <- toCanvasCoordinates template.canvas template.canvasHtmlElement
-            { x: toNumber $ Touch.clientX touch
-            , y: toNumber $ Touch.clientY touch
-            }
-        let translation = { translateX: x - pos.x, translateY: y - pos.y }
-        _ <- Layer.drag translation template.layer
-        _ <- Layer.dragEnd template.layer
-        redraw template
 
 mkInputListener :: Template -> Effect EventListener
 mkInputListener template = Event.eventListener \_ -> redraw template
@@ -346,11 +347,12 @@ connectFileInput { document } id layer k = unsafePartial do
   Just element <- Dom.getElementById id $ Html.toNonElementParentNode document
   let Just inputElement = Input.fromElement element
 
-  let callback = \value -> case value of
+  let
+    callback = \value -> case value of
+      Nothing -> pure unit
+      Just fileList -> case FileList.items fileList !! 0 of
         Nothing -> pure unit
-        Just fileList -> case FileList.items fileList !! 0 of
-          Nothing -> pure unit
-          Just file -> RefLayer.modifyM_ (k file) layer
+        Just file -> RefLayer.modifyM_ (k file) layer
 
   initialValue <- Input.files inputElement
   callback initialValue
@@ -359,13 +361,13 @@ connectFileInput { document } id layer k = unsafePartial do
   Event.addEventListener (EventType "change") inputListener false $ Dom.toEventTarget element
 
 connectFileInputPure :: forall l. TemplateContext -> String -> RefLayer l -> (File -> l -> l) -> Effect Unit
-connectFileInputPure  ctx id layer k = connectFileInput ctx id layer ((pure <<< _) <<< k)
+connectFileInputPure ctx id layer k = connectFileInput ctx id layer ((pure <<< _) <<< k)
 
 connectBlobInput :: forall l. TemplateContext -> String -> RefLayer l -> (Blob -> l -> Effect l) -> Effect Unit
 connectBlobInput ctx id layer k = connectFileInput ctx id layer (k <<< File.toBlob)
 
 connectBlobInputPure :: forall l. TemplateContext -> String -> RefLayer l -> (Blob -> l -> l) -> Effect Unit
-connectBlobInputPure  ctx id layer k = connectBlobInput ctx id layer ((pure <<< _) <<< k)
+connectBlobInputPure ctx id layer k = connectBlobInput ctx id layer ((pure <<< _) <<< k)
 
 connectObjectUrlInput :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> Effect l) -> Effect Unit
 connectObjectUrlInput ctx id layer k = connectBlobInput ctx id layer \blob l -> do

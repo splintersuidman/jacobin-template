@@ -3,10 +3,11 @@ module Effect.Ref.Extra
   , modifyM_
   ) where
 
+import Prelude
+
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
-import Prelude
 
 modifyM :: forall @m s. MonadEffect m => (s -> m s) -> Ref s -> m s
 modifyM f r = do
