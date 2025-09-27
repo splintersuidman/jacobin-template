@@ -49,9 +49,9 @@ main = void $ unsafePartial do
     Canvas.SourceOver
 
   logo <- mkImageLayer
-    "./img/jacobinlogo.svg"
-    { x: templateDimensions.width - 120.0 * templateResolution, y: templateDimensions.height - 200.0 * templateResolution }
-    templateResolutionScale
+    "./img/jacobinlogo80x200.png"
+    { x: templateWidth - (60.0 + 40.0) * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
+    { scaleX: 1.0, scaleY: 1.0 }
     Canvas.SourceOver
 
   bodyTextLayer <- mkRefLayer $ MarkupTextLayer
@@ -69,7 +69,7 @@ main = void $ unsafePartial do
     , baseline: BaselineTop
     , letterSpacing: "-3px"
     , dragOffset: Nothing
-    , maxWidth: Just $ templateDimensions.width - 2.0 * 60.0 * templateResolution
+    , maxWidth: Just $ templateWidth - 2.0 * 60.0 * templateResolution
     , context: canvasContext
     }
   connectTextAreaPure templateContext "bodytext" bodyTextLayer Markup.setText'
@@ -78,14 +78,14 @@ main = void $ unsafePartial do
   authorLayer <- mkRefLayer $ TextLayer
     { text: "AUTEUR"
     , lineHeight: 0.95
-    , position: { x: 60.0 * templateResolution, y: templateDimensions.height - 200.0 * templateResolution }
+    , position: { x: 60.0 * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
     , fillStyle: "#f00"
     , fontName: "Oswald"
     , fontStyle: "normal"
     , fontWeight: "400"
     , fontSize: 50.0 * templateResolution
     , align: AlignLeft
-    , baseline: BaselineTop
+    , baseline: BaselineBottom
     , letterSpacing: "-3px"
     , dragOffset: Nothing
     , maxWidth: Nothing
@@ -97,8 +97,8 @@ main = void $ unsafePartial do
   titleLayer <- mkRefLayer $ MarkupTextLayer
     { text: []
     , lineHeight: 0.9
-    , position: { x: 60.0 * templateResolution, y: templateDimensions.height - 200.0 * templateResolution + 50.0 * templateResolution }
-    , maxWidth: Just $ templateDimensions.width - 4.0 * 60.0 * templateResolution
+    , position: { x: 60.0 * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
+    , maxWidth: Just $ templateWidth - 4.0 * 60.0 * templateResolution
     , fillStyle: "#f00"
     , font:
         { name: "Oswald"
@@ -127,5 +127,5 @@ main = void $ unsafePartial do
   template <- mkTemplate templateContext layers
   redraw template
   addEventListeners template
-  Just _ <- mkDownloadButton "download" "jacobin.png" template
+  Just _ <- mkDownloadButton "download" "jacobin-tekst.png" template
   pure unit

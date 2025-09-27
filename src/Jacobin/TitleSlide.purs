@@ -153,15 +153,15 @@ main = void $ unsafePartial do
     Canvas.SourceOver
 
   logoRed <- mkImageLayer
-    "./img/jacobinlogo.svg"
-    { x: templateWidth - 120.0 * templateResolution, y: templateHeight - 200.0 * templateResolution }
-    templateResolutionScale
+    "./img/jacobinlogo80x200.png"
+    { x: templateWidth - (60.0 + 40.0) * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
+    { scaleX: 1.0, scaleY: 1.0 }
     Canvas.SourceOver
 
   logoWhite <- mkImageLayer
-    "./img/jacobinlogowit.svg"
-    { x: templateWidth / 2.0 - 120.0 * templateResolution, y: templateHeight - 200.0 * templateResolution }
-    templateResolutionScale
+    "./img/jacobinlogowit80x200.png"
+    { x: templateWidth / 2.0 - (60.0 + 40.0) * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
+    { scaleX: 1.0, scaleY: 1.0 }
     Canvas.SourceOver
 
   bodyTextLayer <- mkRefLayer $ MarkupTextLayer
@@ -234,14 +234,14 @@ main = void $ unsafePartial do
   smallAuthorLayer <- mkRefLayer $ TextLayer
     { text: "AUTEUR"
     , lineHeight: 0.95
-    , position: { x: templateWidth / 2.0 + 128.0 * templateResolution, y: templateHeight - 200.0 * templateResolution }
+    , position: { x: templateWidth / 2.0 + 128.0 * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
     , fillStyle: "#f00"
     , fontName: "Oswald"
     , fontStyle: "normal"
     , fontWeight: "400"
     , fontSize: 2.0 * 50.0
     , align: AlignLeft
-    , baseline: BaselineTop
+    , baseline: BaselineBottom
     , letterSpacing: "-3px"
     , dragOffset: Nothing
     , maxWidth: Nothing
@@ -252,7 +252,7 @@ main = void $ unsafePartial do
   smallTitleLayer <- mkRefLayer $ MarkupTextLayer
     { text: []
     , lineHeight: 0.9
-    , position: { x: templateWidth / 2.0 + 128.0 * templateResolution, y: templateHeight - 200.0 * templateResolution + 50.0 * templateResolution }
+    , position: { x: templateWidth / 2.0 + 128.0 * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
     , maxWidth: Just $ templateWidth / 2.0 - (128.0 + 2.0 * 60.0 + 20.0) * templateResolution
     , fillStyle: "#f00"
     , font:
