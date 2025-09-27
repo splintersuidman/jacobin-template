@@ -103,7 +103,7 @@ main = void $ unsafePartial do
     , font:
         { name: "Oswald"
         , style: { normal: "normal", italic: "italic" }
-        , weight: { normal: "500", bold: "700" }
+        , weight: { normal: "700", bold: "700" }
         , size: 50.0 * templateResolution
         }
     , align: AlignLeft
