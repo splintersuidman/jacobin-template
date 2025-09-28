@@ -26,7 +26,7 @@ import Template.Layer.Text as TextLayer
 import Template.Layer.Text.Markup (MarkupTextLayer(..))
 import Template.Layer.Text.Markup as MarkupTextLayer
 import Template.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal, mkUndraggableVertical)
-import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
+import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButton, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
 instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0 / 4.0 }
@@ -46,6 +46,18 @@ templateWidth = templateDimensions.width
 
 templateHeight :: Number
 templateHeight = templateDimensions.height
+
+storyDimensions :: Dimensions
+storyDimensions = { width: 1080.0, height: 1920.0 }
+
+storyTemplateDimensions :: Dimensions
+storyTemplateDimensions = { width: templateResolution, height: templateResolution } * storyDimensions
+
+storyTemplateWidth :: Number
+storyTemplateWidth = storyTemplateDimensions.width
+
+storyTemplateHeight :: Number
+storyTemplateHeight = storyTemplateDimensions.height
 
 newtype GuillotineLayer = GuillotineLayer
   { guillotine :: ImageLayer
@@ -131,9 +143,9 @@ instance MonadEffect m => Layer m OverlayLayer where
     overlayBackground <- dragEnd l.overlayBackground
     pure $ OverlayLayer l { overlayBackground = overlayBackground }
 
-main :: Effect Unit
-main = void $ unsafePartial do
-  Just templateContext <- mkTemplateContext "canvas" templateDimensions
+titleSlide :: Effect Unit
+titleSlide = void $ unsafePartial do
+  Just templateContext <- mkTemplateContext "canvas-title-slide" templateDimensions
   canvasContext <- Canvas.getContext2D templateContext.canvas
 
   backgroundImageLayer <- mkRefLayer =<< mkEmptyImageLayer { x: 0.0, y: 0.0 } { scaleX: 1.0, scaleY: 1.0 } Canvas.SourceOver
@@ -296,7 +308,7 @@ main = void $ unsafePartial do
       , mkSomeLayer $ mkUndraggableVertical overlayLayer
       , mkSomeLayer $ mkUndraggable guillotineWhite
       , mkSomeLayer backgroundImageLayer
-      , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateDimensions.width, height: templateDimensions.height } "#f00"
+      , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateWidth, height: templateHeight } "#f00"
       ]
 
   template <- mkTemplate templateContext layers
@@ -305,3 +317,89 @@ main = void $ unsafePartial do
   Just _ <- mkDownloadButtonClip "download-left" "jacobin-titel-links.png" { x: 0.0, y: 0.0, width: templateWidth / 2.0, height: templateHeight } template
   Just _ <- mkDownloadButtonClip "download-right" "jacobin-titel-rechts.png" { x: templateWidth / 2.0, y: 0.0, width: templateWidth / 2.0, height: templateHeight } template
   pure unit
+
+story :: Effect Unit
+story = void $ unsafePartial do
+  Just templateContext <- mkTemplateContext "canvas-story" storyTemplateDimensions
+  canvasContext <- Canvas.getContext2D templateContext.canvas
+
+  backgroundImageLayer <- mkRefLayer =<< mkEmptyImageLayer { x: 0.0, y: 0.0 } { scaleX: 1.0, scaleY: 1.0 } Canvas.SourceOver
+  connectObjectUrlInput templateContext "image" backgroundImageLayer ImageLayer.loadImage
+  connectScaleRange templateContext "image-size-story" backgroundImageLayer
+
+  guillotine <- mkImageLayer
+    "./img/guillotinewit2x.png"
+    { x: 60.0 * templateResolution, y: 60.0 * templateResolution }
+    { scaleX: 1.0, scaleY: 1.0 }
+    Canvas.SourceOver
+
+  logo <- mkImageLayer
+    "./img/jacobinlogowit80x200.png"
+    { x: templateWidth / 2.0 - (60.0 + 40.0) * templateResolution, y: storyTemplateHeight - (60.0 + 100.0) * templateResolution }
+    { scaleX: 1.0, scaleY: 1.0 }
+    Canvas.SourceOver
+
+  let titleAndAuthorPosition = { x: 60.0 * templateResolution, y: (150.0 + 100.0) * templateResolution }
+  titleLayer <- mkRefLayer $ MarkupTextLayer
+    { text: []
+    , lineHeight: 0.9
+    , position: titleAndAuthorPosition
+    , maxWidth: Just $ storyTemplateWidth - 2.0 * 60.0 * templateResolution
+    , fillStyle: "#fff"
+    , font:
+        { name: "Oswald"
+        , style: { normal: "normal", italic: "italic" }
+        , weight: { normal: "700", bold: "700" }
+        , size: 100.0 * templateResolution
+        }
+    , align: AlignLeft
+    , baseline: BaselineBottom
+    , letterSpacing: "-2px"
+    , emptyLineHeight: 0.25
+    , dragOffset: Nothing
+    , context: canvasContext
+    }
+  connectTextAreaPure templateContext "title-left" titleLayer MarkupTextLayer.setText'
+  connectMarkupTextSizeRange templateContext "title-size-story" titleLayer
+
+  authorLayer <- mkRefLayer $ TextLayer
+    { text: "AUTEUR"
+    , lineHeight: 0.95
+    , position: titleAndAuthorPosition
+    , fillStyle: "#fff"
+    , fontName: "Oswald"
+    , fontStyle: "normal"
+    , fontWeight: "500"
+    , fontSize: templateResolution * 50.0
+    , align: AlignLeft
+    , baseline: BaselineTop
+    , letterSpacing: "-3px"
+    , dragOffset: Nothing
+    , maxWidth: Nothing
+    , context: canvasContext
+    }
+  connectInputPure templateContext "author" authorLayer TextLayer.setText
+
+  let
+    titleAndAuthorLayer = mkSnapVertical titleAndAuthorPosition.y (50.0 * templateResolution) $ mkGroup @Effect
+      [ mkSomeLayer titleLayer
+      , mkSomeLayer authorLayer
+      ]
+
+  let
+    layers = mkLayers @Effect
+      [ mkSomeLayer $ mkUndraggable logo
+      , mkSomeLayer $ mkUndraggableHorizontal titleAndAuthorLayer
+      , mkSomeLayer $ mkUndraggable guillotine
+      , mkSomeLayer backgroundImageLayer
+      , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: storyTemplateWidth, height: storyTemplateHeight } "#f00"
+      ]
+
+  template <- mkTemplate templateContext layers
+  redraw template
+  addEventListeners template
+  Just _ <- mkDownloadButton "download-story" "jacobin-story.png" template
+  pure unit
+
+main :: Effect Unit
+main = titleSlide *> story
