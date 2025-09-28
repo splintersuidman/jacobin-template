@@ -91,7 +91,7 @@ mkTemplateContext canvasId dimensions = runMaybeT do
   lift $ Canvas.setCanvasDimensions canvas dimensions
 
   document <- lift $ Html.document =<< Html.window
-  canvasElement <- hoistMaybe =<< lift (Dom.getElementById "canvas" $ Html.toNonElementParentNode document)
+  canvasElement <- hoistMaybe =<< lift (Dom.getElementById canvasId $ Html.toNonElementParentNode document)
   canvasHtmlElement <- hoistMaybe $ Html.fromElement canvasElement
 
   pure
