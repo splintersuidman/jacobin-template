@@ -20,13 +20,15 @@ import Template.Layer.Layers (mkLayers)
 import Template.Layer.Rectangle (mkRectangleLayer)
 import Template.Layer.Ref (RefLayer, mkRefLayer)
 import Template.Layer.Ref as RefLayer
+import Template.Layer.Shadow (mkShadow)
+import Template.Layer.Shadow as Shadow
 import Template.Layer.Snap (mkSnapHorizontal, mkSnapVertical)
 import Template.Layer.Text (TextLayer(..))
 import Template.Layer.Text as TextLayer
 import Template.Layer.Text.Markup (MarkupTextLayer(..))
 import Template.Layer.Text.Markup as MarkupTextLayer
 import Template.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal, mkUndraggableVertical)
-import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButton, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
+import Template.Main (addEventListeners, connectCheckboxPure, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButton, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
 instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0 / 4.0 }
@@ -240,10 +242,8 @@ titleSlide = void $ unsafePartial do
   connectInputPure templateContext "author" bigAuthorLayer TextLayer.setText
 
   let
-    bigTitleAndAuthorLayer = mkSnapVertical bigTitleAndAuthorPosition.y (50.0 * templateResolution) $ mkGroup @Effect
-      [ mkSomeLayer bigTitleLayer
-      , mkSomeLayer bigAuthorLayer
-      ]
+    bigTitleAndAuthorLayer = mkSnapVertical bigTitleAndAuthorPosition.y (50.0 * templateResolution)
+      $ mkGroup @Effect [ mkSomeLayer bigTitleLayer, mkSomeLayer bigAuthorLayer ]
 
   smallAuthorLayer <- mkRefLayer $ TextLayer
     { text: "AUTEUR"
@@ -300,13 +300,22 @@ titleSlide = void $ unsafePartial do
       , title: smallTitleLayer
       }
 
+  let shadowColor = "#555"
+  leftSlide <- mkRefLayer
+    $ mkShadow { offsetX: 0.0, offsetY: 0.0 } shadowColor 15.0
+    $ mkLayers @Effect
+        [ mkSomeLayer $ mkUndraggable logoWhite
+        , mkSomeLayer $ mkUndraggableHorizontal bigTitleAndAuthorLayer
+        , mkSomeLayer $ mkUndraggable guillotineWhite
+        ]
+  connectCheckboxPure templateContext "shadow" leftSlide \on -> Shadow.setColor $
+    if on then shadowColor else "#0000"
+
   let
     layers = mkLayers @Effect
-      [ mkSomeLayer $ mkUndraggable logoWhite
-      , mkSomeLayer $ mkUndraggable logoRed
-      , mkSomeLayer $ mkUndraggableHorizontal bigTitleAndAuthorLayer
+      [ mkSomeLayer $ mkUndraggable logoRed
       , mkSomeLayer $ mkUndraggableVertical overlayLayer
-      , mkSomeLayer $ mkUndraggable guillotineWhite
+      , mkSomeLayer leftSlide
       , mkSomeLayer backgroundImageLayer
       , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateWidth, height: templateHeight } "#f00"
       ]
@@ -386,11 +395,20 @@ story = void $ unsafePartial do
       , mkSomeLayer authorLayer
       ]
 
+  let shadowColor = "#555"
+  foregroundElements <- mkRefLayer
+    $ mkShadow { offsetX: 0.0, offsetY: 0.0 } shadowColor 15.0
+    $ mkLayers @Effect
+        [ mkSomeLayer $ mkUndraggable logo
+        , mkSomeLayer $ mkUndraggableHorizontal titleAndAuthorLayer
+        , mkSomeLayer $ mkUndraggable guillotine
+        ]
+  connectCheckboxPure templateContext "shadow" foregroundElements \on -> Shadow.setColor $
+    if on then shadowColor else "#0000"
+
   let
     layers = mkLayers @Effect
-      [ mkSomeLayer $ mkUndraggable logo
-      , mkSomeLayer $ mkUndraggableHorizontal titleAndAuthorLayer
-      , mkSomeLayer $ mkUndraggable guillotine
+      [ mkSomeLayer foregroundElements
       , mkSomeLayer backgroundImageLayer
       , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: storyTemplateWidth, height: storyTemplateHeight } "#f00"
       ]

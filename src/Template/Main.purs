@@ -9,10 +9,12 @@ module Template.Main
   , mkDownloadButton
   , mkDownloadButtonClip
   , toCanvasCoordinates
-  , connectInputPure
   , connectInput
-  , connectTextAreaPure
+  , connectInputPure
+  , connectCheckbox
+  , connectCheckboxPure
   , connectTextArea
+  , connectTextAreaPure
   , connectRange
   , connectRangePure
   , connectTextSizeRange
@@ -307,6 +309,22 @@ connectTextArea { document } id layer k = unsafePartial do
 
 connectTextAreaPure :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> l) -> Effect Unit
 connectTextAreaPure ctx id layer k = connectTextArea ctx id layer ((pure <<< _) <<< k)
+
+connectCheckbox :: forall l. TemplateContext -> String -> RefLayer l -> (Boolean -> l -> Effect l) -> Effect Unit
+connectCheckbox { document } id layer k = unsafePartial do
+  Just element <- Dom.getElementById id $ Html.toNonElementParentNode document
+  let Just inputElement = Input.fromElement element
+
+  initialValue <- Input.checked inputElement
+  RefLayer.modifyM_ (k initialValue) layer
+
+  inputListener <- Event.eventListener \_ -> do
+    value <- Input.checked inputElement
+    RefLayer.modifyM_ (k value) layer
+  Event.addEventListener (EventType "input") inputListener false $ Dom.toEventTarget element
+
+connectCheckboxPure :: forall l. TemplateContext -> String -> RefLayer l -> (Boolean -> l -> l) -> Effect Unit
+connectCheckboxPure ctx id layer k = connectCheckbox ctx id layer ((pure <<< _) <<< k)
 
 connectRange :: forall l. TemplateContext -> String -> RefLayer l -> (Number -> l -> Effect l) -> Effect Unit
 connectRange { document } id layer k = unsafePartial do
