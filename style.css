@@ -29,6 +29,10 @@ main {
     flex-direction: column;
 }
 
+.label-input-pair-checkbox {
+    flex-direction: row !important;
+}
+
 .label-input-pair .input {
     font-family: 'IBM Plex Sans', sans-serif;
 }
