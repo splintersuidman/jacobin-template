@@ -4,6 +4,7 @@ module Template.Layer.Text.Markup
   , setText
   , setText'
   , setFontSize
+  , setFillStyle
   , mapMaxWidth
   , FontStyle(..)
   , FontWeight(..)
@@ -25,8 +26,9 @@ import Data.Traversable (for, traverse)
 import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline(..), fillText, setFillStyle, setFont, setTextAlign, setTextBaseline, withContext)
-import Graphics.Canvas.Extra (setLetterSpacing)
+import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline(..), fillText, withContext)
+import Graphics.Canvas (setFillStyle, setFont, setTextAlign, setTextBaseline) as Canvas
+import Graphics.Canvas.Extra (setLetterSpacing) as Canvas
 import Parsing (ParseError, Parser)
 import Parsing (runParser) as Parser
 import Parsing.Combinators (between, try) as Parser
@@ -181,6 +183,9 @@ setText' text (MarkupTextLayer l) = case Parser.runParser text markupParser of
 setFontSize :: Number -> MarkupTextLayer -> MarkupTextLayer
 setFontSize fontSize (MarkupTextLayer l) = MarkupTextLayer l { font { size = fontSize } }
 
+setFillStyle :: String -> MarkupTextLayer -> MarkupTextLayer
+setFillStyle fillStyle (MarkupTextLayer l) = MarkupTextLayer l { fillStyle = fillStyle }
+
 mapMaxWidth :: (Number -> Number) -> MarkupTextLayer -> MarkupTextLayer
 mapMaxWidth f (MarkupTextLayer l) = MarkupTextLayer l { maxWidth = map f l.maxWidth }
 
@@ -191,10 +196,10 @@ instance MonadEffect m => Layer m MarkupTextLayer where
   -- TODO: take baseline into account
   -- TODO: take direction into account (for AlignStart and AlignEnd)
   containsPoint { x, y } (MarkupTextLayer l) = liftEffect $ withContext l.context do
-    setFillStyle l.context l.fillStyle
-    setTextBaseline l.context l.baseline
-    setTextAlign l.context l.align
-    setLetterSpacing l.context l.letterSpacing
+    Canvas.setFillStyle l.context l.fillStyle
+    Canvas.setTextBaseline l.context l.baseline
+    Canvas.setTextAlign l.context l.align
+    Canvas.setLetterSpacing l.context l.letterSpacing
 
     lines' <- case l.maxWidth of
       Just maxWidth -> wrapLinesMarkup l.context l.font maxWidth l.text
@@ -243,11 +248,11 @@ instance MonadEffect m => Layer m MarkupTextLayer where
   dragEnd (MarkupTextLayer layer) = pure $ MarkupTextLayer layer { dragOffset = Nothing }
 
   draw ctx (MarkupTextLayer l) = withContext ctx do
-    setFillStyle ctx l.fillStyle
-    setTextBaseline ctx l.baseline
+    Canvas.setFillStyle ctx l.fillStyle
+    Canvas.setTextBaseline ctx l.baseline
     -- Alignment is handled manually below
-    setTextAlign ctx AlignLeft
-    setLetterSpacing ctx l.letterSpacing
+    Canvas.setTextAlign ctx AlignLeft
+    Canvas.setLetterSpacing ctx l.letterSpacing
 
     lines' <- case l.maxWidth of
       Just maxWidth -> wrapLinesMarkup ctx l.font maxWidth l.text
@@ -295,7 +300,7 @@ setMarkupFont ctx font (Markup text) = do
     weight = case text.weight of
       WeightNormal -> font.weight.normal
       WeightBold -> font.weight.bold
-  setFont ctx $ style <> " " <> weight <> " " <> show font.size <> "px " <> font.name
+  Canvas.setFont ctx $ style <> " " <> weight <> " " <> show font.size <> "px " <> font.name
 
 measureMarkupWidth :: Context2D -> Font -> Markup -> Effect Number
 measureMarkupWidth ctx font m@(Markup markup) = withContext ctx do

@@ -2,6 +2,7 @@ module Template.Layer.Text
   ( TextLayer(..)
   , setText
   , setFontSize
+  , setFillStyle
   , mapMaxWidth
   , measureTextHeight
   , measureTextWidth
@@ -23,8 +24,9 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline(..), fillText, setFillStyle, setFont, setTextAlign, setTextBaseline, withContext)
-import Graphics.Canvas.Extra (setLetterSpacing)
+import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline(..), fillText, withContext)
+import Graphics.Canvas (setFillStyle, setFont, setTextAlign, setTextBaseline) as Canvas
+import Graphics.Canvas.Extra (setLetterSpacing) as Canvas
 import Graphics.Canvas.TextMetrics (measureText)
 import Template.Layer (class Layer, DragOffset, Point, dragTranslateMaybe, translatePoint)
 
@@ -51,6 +53,9 @@ setText text (TextLayer l) = TextLayer l { text = text }
 setFontSize :: Number -> TextLayer -> TextLayer
 setFontSize fontSize (TextLayer l) = TextLayer l { fontSize = fontSize }
 
+setFillStyle :: String -> TextLayer -> TextLayer
+setFillStyle fillStyle (TextLayer l) = TextLayer l { fillStyle = fillStyle }
+
 mapMaxWidth :: (Number -> Number) -> TextLayer -> TextLayer
 mapMaxWidth f (TextLayer l) = TextLayer l { maxWidth = map f l.maxWidth }
 
@@ -61,11 +66,11 @@ instance MonadEffect m => Layer m TextLayer where
   -- TODO: take baseline into account
   -- TODO: take direction into account (for AlignStart and AlignEnd)
   containsPoint { x, y } (TextLayer l) = liftEffect $ withContext l.context do
-    setFillStyle l.context l.fillStyle
-    setFont l.context $ l.fontStyle <> " " <> l.fontWeight <> " " <> show l.fontSize <> "px " <> l.fontName
-    setTextBaseline l.context l.baseline
-    setTextAlign l.context l.align
-    setLetterSpacing l.context l.letterSpacing
+    Canvas.setFillStyle l.context l.fillStyle
+    Canvas.setFont l.context $ l.fontStyle <> " " <> l.fontWeight <> " " <> show l.fontSize <> "px " <> l.fontName
+    Canvas.setTextBaseline l.context l.baseline
+    Canvas.setTextAlign l.context l.align
+    Canvas.setLetterSpacing l.context l.letterSpacing
 
     lines <- case l.maxWidth of
       Just maxWidth -> wrapLines l.context maxWidth l.text
@@ -103,11 +108,11 @@ instance MonadEffect m => Layer m TextLayer where
   dragEnd (TextLayer layer) = pure $ TextLayer layer { dragOffset = Nothing }
 
   draw ctx (TextLayer l) = withContext ctx do
-    setFillStyle ctx l.fillStyle
-    setFont ctx $ l.fontStyle <> " " <> l.fontWeight <> " " <> show l.fontSize <> "px " <> l.fontName
-    setTextBaseline ctx l.baseline
-    setTextAlign ctx l.align
-    setLetterSpacing ctx l.letterSpacing
+    Canvas.setFillStyle ctx l.fillStyle
+    Canvas.setFont ctx $ l.fontStyle <> " " <> l.fontWeight <> " " <> show l.fontSize <> "px " <> l.fontName
+    Canvas.setTextBaseline ctx l.baseline
+    Canvas.setTextAlign ctx l.align
+    Canvas.setLetterSpacing ctx l.letterSpacing
 
     lines <- case l.maxWidth of
       Just maxWidth -> wrapLines ctx maxWidth l.text

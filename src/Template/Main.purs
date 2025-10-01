@@ -15,6 +15,8 @@ module Template.Main
   , connectCheckboxPure
   , connectTextArea
   , connectTextAreaPure
+  , connectSelect
+  , connectSelectPure
   , connectRange
   , connectRangePure
   , connectTextSizeRange
@@ -48,7 +50,7 @@ import Template.Layer.Ref (RefLayer, mkRefLayer)
 import Template.Layer.Ref as RefLayer
 import Template.Layer.Text (TextLayer)
 import Template.Layer.Text as TextLayer
-import Template.Layer.Text.Markup (MarkupTextLayer(..))
+import Template.Layer.Text.Markup (MarkupTextLayer)
 import Template.Layer.Text.Markup as MarkupTextLayer
 import Web.DOM (Element)
 import Web.DOM.Document (createElement) as Dom
@@ -70,6 +72,7 @@ import Web.HTML.HTMLDocument (toNonElementParentNode) as Html
 import Web.HTML.HTMLDocument as HtmlDocument
 import Web.HTML.HTMLElement (click, fromElement, offsetHeight, offsetWidth, toElement, toNode) as Html
 import Web.HTML.HTMLInputElement as Input
+import Web.HTML.HTMLSelectElement as Select
 import Web.HTML.HTMLTextAreaElement as TextArea
 import Web.HTML.Window (document) as Html
 import Web.TouchEvent.Touch as Touch
@@ -325,6 +328,22 @@ connectCheckbox { document } id layer k = unsafePartial do
 
 connectCheckboxPure :: forall l. TemplateContext -> String -> RefLayer l -> (Boolean -> l -> l) -> Effect Unit
 connectCheckboxPure ctx id layer k = connectCheckbox ctx id layer ((pure <<< _) <<< k)
+
+connectSelect :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> Effect l) -> Effect Unit
+connectSelect { document } id layer k = unsafePartial do
+  Just element <- Dom.getElementById id $ Html.toNonElementParentNode document
+  let Just selectElement = Select.fromElement element
+
+  initialValue <- Select.value selectElement
+  RefLayer.modifyM_ (k initialValue) layer
+
+  selectListener <- Event.eventListener \_ -> do
+    value <- Select.value selectElement
+    RefLayer.modifyM_ (k value) layer
+  Event.addEventListener (EventType "input") selectListener false $ Dom.toEventTarget element
+
+connectSelectPure :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> l) -> Effect Unit
+connectSelectPure ctx id layer k = connectSelect ctx id layer ((pure <<< _) <<< k)
 
 connectRange :: forall l. TemplateContext -> String -> RefLayer l -> (Number -> l -> Effect l) -> Effect Unit
 connectRange { document } id layer k = unsafePartial do

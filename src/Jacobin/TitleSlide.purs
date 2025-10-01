@@ -28,7 +28,7 @@ import Template.Layer.Text as TextLayer
 import Template.Layer.Text.Markup (MarkupTextLayer(..))
 import Template.Layer.Text.Markup as MarkupTextLayer
 import Template.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal, mkUndraggableVertical)
-import Template.Main (addEventListeners, connectCheckboxPure, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButton, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
+import Template.Main (addEventListeners, connectCheckboxPure, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectSelect, connectSelectPure, connectTextAreaPure, mkDownloadButton, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
 instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0 / 4.0 }
@@ -65,6 +65,9 @@ newtype GuillotineLayer = GuillotineLayer
   { guillotine :: ImageLayer
   , xMax :: Number
   }
+
+modifyGuillotineLayer :: forall @m. Functor m => (ImageLayer -> m ImageLayer) -> GuillotineLayer -> m GuillotineLayer
+modifyGuillotineLayer f (GuillotineLayer l) = f l.guillotine <#> \guillotine -> GuillotineLayer l { guillotine = guillotine }
 
 mkGuillotineLayer :: forall m. MonadEffect m => String -> Point -> ScaleTransform -> Number -> m GuillotineLayer
 mkGuillotineLayer path position scale xMax = do
@@ -160,7 +163,7 @@ titleSlide = void $ unsafePartial do
     { scaleX: ((templateWidth - 180.0 * templateResolution) - (templateWidth / 2.0 + 285.0 * templateResolution)) / 1560.0, scaleY: 1.0 }
     (templateWidth - 180.0 * templateResolution)
 
-  guillotineWhite <- mkImageLayer
+  guillotineWhite <- mkRefLayer =<< mkImageLayer
     "./img/guillotinewit2x.png"
     { x: 60.0 * templateResolution, y: 60.0 * templateResolution }
     { scaleX: 1.0, scaleY: 1.0 }
@@ -172,7 +175,7 @@ titleSlide = void $ unsafePartial do
     { scaleX: 1.0, scaleY: 1.0 }
     Canvas.SourceOver
 
-  logoWhite <- mkImageLayer
+  logoWhite <- mkRefLayer =<< mkImageLayer
     "./img/jacobinlogowit80x200.png"
     { x: templateWidth / 2.0 - (60.0 + 40.0) * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
     { scaleX: 1.0, scaleY: 1.0 }
@@ -284,6 +287,19 @@ titleSlide = void $ unsafePartial do
     }
   connectTextAreaPure templateContext "title-right" smallTitleLayer MarkupTextLayer.setText'
 
+  connectSelectPure templateContext "color" bigTitleLayer MarkupTextLayer.setFillStyle
+  connectSelectPure templateContext "color" bigAuthorLayer TextLayer.setFillStyle
+  connectSelect templateContext "color" logoWhite \color -> case color of
+    "#fff" -> ImageLayer.loadImage "./img/jacobinlogowit80x200.png"
+    "#f00" -> ImageLayer.loadImage "./img/jacobinlogo80x200.png"
+    "#000" -> ImageLayer.loadImage "./img/jacobinlogozwart80x200.png"
+    "#fff" -> ImageLayer.loadImage "./img/jacobinlogowit80x200.png"
+  connectSelect templateContext "color" guillotineWhite \color -> case color of
+    "#fff" -> ImageLayer.loadImage "./img/guillotinewit2x.png"
+    "#f00" -> ImageLayer.loadImage "./img/guillotine2x.png"
+    "#000" -> ImageLayer.loadImage "./img/guillotinezwart2x.png"
+    _      -> ImageLayer.loadImage "./img/guillotinewit2x.png"
+
   let
     overlayBackgroundLayer = mkOverlayBackgroundLayer
       { x: templateWidth / 2.0 + 60.0 * templateResolution, y: 0.0 }
@@ -336,13 +352,13 @@ story = void $ unsafePartial do
   connectObjectUrlInput templateContext "image" backgroundImageLayer ImageLayer.loadImage
   connectScaleRange templateContext "image-size-story" backgroundImageLayer
 
-  guillotine <- mkImageLayer
+  guillotine <- mkRefLayer =<< mkImageLayer
     "./img/guillotinewit2x.png"
     { x: 60.0 * templateResolution, y: 60.0 * templateResolution }
     { scaleX: 1.0, scaleY: 1.0 }
     Canvas.SourceOver
 
-  logo <- mkImageLayer
+  logo <- mkRefLayer =<< mkImageLayer
     "./img/jacobinlogowit80x200.png"
     { x: templateWidth / 2.0 - (60.0 + 40.0) * templateResolution, y: storyTemplateHeight - (60.0 + 100.0) * templateResolution }
     { scaleX: 1.0, scaleY: 1.0 }
@@ -388,6 +404,19 @@ story = void $ unsafePartial do
     , context: canvasContext
     }
   connectInputPure templateContext "author" authorLayer TextLayer.setText
+
+  connectSelectPure templateContext "color" titleLayer MarkupTextLayer.setFillStyle
+  connectSelectPure templateContext "color" authorLayer TextLayer.setFillStyle
+  connectSelect templateContext "color" logo \color -> case color of
+    "#fff" -> ImageLayer.loadImage "./img/jacobinlogowit80x200.png"
+    "#f00" -> ImageLayer.loadImage "./img/jacobinlogo80x200.png"
+    "#000" -> ImageLayer.loadImage "./img/jacobinlogozwart80x200.png"
+    "#fff" -> ImageLayer.loadImage "./img/jacobinlogowit80x200.png"
+  connectSelect templateContext "color" guillotine \color -> case color of
+    "#fff" -> ImageLayer.loadImage "./img/guillotinewit2x.png"
+    "#f00" -> ImageLayer.loadImage "./img/guillotine2x.png"
+    "#000" -> ImageLayer.loadImage "./img/guillotinezwart2x.png"
+    _      -> ImageLayer.loadImage "./img/guillotinewit2x.png"
 
   let
     titleAndAuthorLayer = mkSnapVertical titleAndAuthorPosition.y (50.0 * templateResolution) $ mkGroup @Effect
