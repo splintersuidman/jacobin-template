@@ -43,9 +43,9 @@ main = void $ unsafePartial do
   canvasContext <- Canvas.getContext2D templateContext.canvas
 
   guillotine <- mkImageLayer
-    "./img/guillotine.svg"
+    "./img/guillotine2x.png"
     { x: 60.0 * templateResolution, y: 60.0 * templateResolution }
-    templateResolutionScale
+    { scaleX: (1560.0 + 2.0 * 60.0) / 1560.0, scaleY: 1.0 }
     Canvas.SourceOver
 
   logo <- mkImageLayer
