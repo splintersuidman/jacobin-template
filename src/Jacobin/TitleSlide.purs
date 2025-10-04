@@ -299,7 +299,7 @@ titleSlide = void $ unsafePartial do
     "#fff" -> ImageLayer.loadImage "./img/guillotinewit2x.png"
     "#f00" -> ImageLayer.loadImage "./img/guillotine2x.png"
     "#000" -> ImageLayer.loadImage "./img/guillotinezwart2x.png"
-    _      -> ImageLayer.loadImage "./img/guillotinewit2x.png"
+    _ -> ImageLayer.loadImage "./img/guillotinewit2x.png"
 
   let
     overlayBackgroundLayer = mkOverlayBackgroundLayer
@@ -356,7 +356,7 @@ story = void $ unsafePartial do
   guillotine <- mkRefLayer =<< mkImageLayer
     "./img/guillotinewit2x.png"
     { x: 60.0 * templateResolution, y: (120.0 + 60.0) * templateResolution }
-    { scaleX: 1.0, scaleY: 1.0 }
+    { scaleX: 960.0 / 780.0, scaleY: 1.0 }
     Canvas.SourceOver
 
   logo <- mkRefLayer =<< mkImageLayer
@@ -423,7 +423,7 @@ story = void $ unsafePartial do
     "#fff" -> ImageLayer.loadImage "./img/guillotinewit2x.png"
     "#f00" -> ImageLayer.loadImage "./img/guillotine2x.png"
     "#000" -> ImageLayer.loadImage "./img/guillotinezwart2x.png"
-    _      -> ImageLayer.loadImage "./img/guillotinewit2x.png"
+    _ -> ImageLayer.loadImage "./img/guillotinewit2x.png"
 
   let
     titleAndAuthorLayer = mkSnapVertical titleAndAuthorPosition.y (50.0 * templateResolution) $ mkGroup @Effect
