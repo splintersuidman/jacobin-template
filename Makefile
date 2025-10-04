@@ -1,9 +1,9 @@
 PREFIX		:= dist
 BUILDDIR	:= dist
 
-.PHONY		:= all install clean format format-check TextSlide TitleSlide
+.PHONY		:= all install clean format format-check TextSlide TitleSlide FinalSlide
 
-all: TextSlide TitleSlide
+all: TextSlide TitleSlide FinalSlide
 
 install:
 	mkdir -p $(PREFIX)
@@ -14,6 +14,7 @@ $(BUILDDIR):
 
 TextSlide: $(BUILDDIR) $(BUILDDIR)/textslide.html $(BUILDDIR)/TextSlide.js $(BUILDDIR)/style.css $(BUILDDIR)/img
 TitleSlide: $(BUILDDIR) $(BUILDDIR)/titleslide.html $(BUILDDIR)/TitleSlide.js $(BUILDDIR)/style.css $(BUILDDIR)/img
+FinalSlide: $(BUILDDIR) $(BUILDDIR)/finalslide.html $(BUILDDIR)/FinalSlide.js $(BUILDDIR)/style.css $(BUILDDIR)/img
 
 $(BUILDDIR)/%.js: src/Jacobin/%.purs $(BUILDDIR)
 	spago bundle --minify --module Jacobin.$* --outfile $@
