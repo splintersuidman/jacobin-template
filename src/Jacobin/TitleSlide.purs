@@ -17,6 +17,7 @@ import Template.Layer.Group (mkGroup)
 import Template.Layer.Image (ImageLayer(..), mkEmptyImageLayer, mkImageLayer)
 import Template.Layer.Image as ImageLayer
 import Template.Layer.Layers (mkLayers)
+import Template.Layer.Passthrough (mkPassthrough)
 import Template.Layer.Rectangle (mkRectangleLayer)
 import Template.Layer.Ref (RefLayer, mkRefLayer)
 import Template.Layer.Ref as RefLayer
@@ -444,7 +445,7 @@ story = void $ unsafePartial do
   let
     layers = mkLayers @Effect
       [ mkSomeLayer foregroundElements
-      , mkSomeLayer $ mkUndraggable overlay
+      , mkSomeLayer $ mkPassthrough $ mkUndraggable overlay
       , mkSomeLayer backgroundImageLayer
       , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: storyTemplateWidth, height: storyTemplateHeight } "#f00"
       ]
