@@ -9,7 +9,8 @@ import Graphics.Canvas (Composite(..), getContext2D) as Canvas
 import Graphics.Canvas (Dimensions, ScaleTransform, TextAlign(..), TextBaseline(..))
 import Partial.Unsafe (unsafePartial)
 import Template.Layer (mkSomeLayer)
-import Template.Layer.Image (mkImageLayer)
+import Template.Layer.Image (mkEmptyImageLayer, mkImageLayer)
+import Template.Layer.Image as ImageLayer
 import Template.Layer.Layers (mkLayers)
 import Template.Layer.Rectangle (mkRectangleLayer)
 import Template.Layer.Ref (mkRefLayer)
@@ -17,7 +18,7 @@ import Template.Layer.Text (TextLayer(..), setText)
 import Template.Layer.Text.Markup (MarkupTextLayer(..))
 import Template.Layer.Text.Markup as Markup
 import Template.Layer.Undraggable (mkUndraggable)
-import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectTextAreaPure, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
+import Template.Main (addEventListeners, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
 instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0 / 4.0 }
@@ -53,6 +54,10 @@ main = void $ unsafePartial do
     { x: templateWidth - (60.0 + 40.0) * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
     { scaleX: 1.0, scaleY: 1.0 }
     Canvas.SourceOver
+
+  imageLayer <- mkRefLayer =<< mkEmptyImageLayer { x: 0.0, y: 0.0 } { scaleX: 1.0, scaleY: 1.0 } Canvas.SourceOver
+  connectObjectUrlInput templateContext "image" imageLayer ImageLayer.loadImage
+  connectScaleRange templateContext "image-size" imageLayer
 
   bodyTextLayer <- mkRefLayer $ MarkupTextLayer
     { text: []
@@ -117,13 +122,14 @@ main = void $ unsafePartial do
   connectTextAreaPure templateContext "title" titleLayer Markup.setText'
 
   let
-    layers = mkUndraggable $ mkLayers @Effect
-      [ mkSomeLayer guillotine
-      , mkSomeLayer logo
-      , mkSomeLayer authorLayer
-      , mkSomeLayer titleLayer
-      , mkSomeLayer bodyTextLayer
-      , mkSomeLayer $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateWidth, height: templateHeight } "#fff"
+    layers = mkLayers @Effect
+      [ mkSomeLayer $ mkUndraggable guillotine
+      , mkSomeLayer $ mkUndraggable logo
+      , mkSomeLayer $ mkUndraggable authorLayer
+      , mkSomeLayer $ mkUndraggable titleLayer
+      , mkSomeLayer $ mkUndraggable bodyTextLayer
+      , mkSomeLayer imageLayer
+      , mkSomeLayer $ mkUndraggable $ mkRectangleLayer { x: 0.0, y: 0.0, width: templateWidth, height: templateHeight } "#fff"
       ]
 
   template <- mkTemplate templateContext layers
