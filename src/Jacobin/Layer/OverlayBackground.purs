@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.Number as Number
 import Graphics.Canvas (Dimensions)
 import Graphics.Canvas as Canvas
-import Template.Layer (class Layer, DragOffset, Point, dragTranslateMaybe, translatePoint)
+import Sjablong.Layer (class Layer, DragOffset, Point, dragTranslateMaybe, translatePoint)
 
 degreesToRadians :: Number -> Number
 degreesToRadians degrees = degrees * Number.pi / 180.0

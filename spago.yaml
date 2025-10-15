@@ -7,22 +7,14 @@ package:
     - effect
     - foldable-traversable
     - numbers
-    - parsing
-    - partial
     - prelude
-    - record
     - refs
+    - sjablong
     - strings
-    - stringutils
-    - unlift
-    - web-dom
-    - web-events
-    - web-file
-    - web-html
-    - web-touchevents
-    - web-uievents
 workspace:
   packageSet:
     registry: 66.5.0
   extraPackages:
-    bound: 0.6.0
+    sjablong:
+      git: https://github.com/splintersuidman/sjablong.git
+      ref: 3a3c5806e86f0ef4773bb853aad36d85cf5efd79

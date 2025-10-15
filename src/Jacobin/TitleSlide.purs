@@ -12,24 +12,24 @@ import Graphics.Canvas (Composite(..), getContext2D) as Canvas
 import Graphics.Canvas (Dimensions, ScaleTransform, TextAlign(..), TextBaseline(..))
 import Jacobin.Layer.OverlayBackground (OverlayBackgroundLayer(..), mkOverlayBackgroundLayer)
 import Partial.Unsafe (unsafePartial)
-import Template.Layer (class Layer, Point, containsPoint, dragEnd, dragStart, dragTranslateMaybe, draw, mkSomeLayer, position, translate)
-import Template.Layer.Group (mkGroup)
-import Template.Layer.Image (ImageLayer(..), mkEmptyImageLayer, mkImageLayer)
-import Template.Layer.Image as ImageLayer
-import Template.Layer.Layers (mkLayers)
-import Template.Layer.Passthrough (mkPassthrough)
-import Template.Layer.Rectangle (mkRectangleLayer)
-import Template.Layer.Ref (RefLayer, mkRefLayer)
-import Template.Layer.Ref as RefLayer
-import Template.Layer.Shadow (mkShadow)
-import Template.Layer.Shadow as Shadow
-import Template.Layer.Snap (mkSnapHorizontal, mkSnapVertical)
-import Template.Layer.Text (TextLayer(..))
-import Template.Layer.Text as TextLayer
-import Template.Layer.Text.Markup (MarkupTextLayer(..))
-import Template.Layer.Text.Markup as MarkupTextLayer
-import Template.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal, mkUndraggableVertical)
-import Template.Main (addEventListeners, connectCheckboxPure, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectSelect, connectSelectPure, connectTextAreaPure, mkDownloadButton, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
+import Sjablong.Layer (class Layer, Point, containsPoint, dragEnd, dragStart, dragTranslateMaybe, draw, mkSomeLayer, position, translate)
+import Sjablong.Layer.Group (mkGroup)
+import Sjablong.Layer.Image (ImageLayer(..), mkEmptyImageLayer, mkImageLayer)
+import Sjablong.Layer.Image as ImageLayer
+import Sjablong.Layer.Layers (mkLayers)
+import Sjablong.Layer.Passthrough (mkPassthrough)
+import Sjablong.Layer.Rectangle (mkRectangleLayer)
+import Sjablong.Layer.Ref (RefLayer, mkRefLayer)
+import Sjablong.Layer.Ref as RefLayer
+import Sjablong.Layer.Shadow (mkShadow)
+import Sjablong.Layer.Shadow as Shadow
+import Sjablong.Layer.Snap (mkSnapHorizontal, mkSnapVertical)
+import Sjablong.Layer.Text (TextLayer(..))
+import Sjablong.Layer.Text as TextLayer
+import Sjablong.Layer.Text.Markup (MarkupTextLayer(..))
+import Sjablong.Layer.Text.Markup as MarkupTextLayer
+import Sjablong.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal, mkUndraggableVertical)
+import Sjablong.Main (addEventListeners, connectCheckboxPure, connectInputPure, connectMarkupTextSizeRange, connectObjectUrlInput, connectScaleRange, connectSelect, connectSelectPure, connectTextAreaPure, mkDownloadButton, mkDownloadButtonClip, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
 instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0 / 4.0 }

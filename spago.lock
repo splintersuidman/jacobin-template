@@ -11,20 +11,10 @@
             "effect",
             "foldable-traversable",
             "numbers",
-            "parsing",
-            "partial",
             "prelude",
-            "record",
             "refs",
-            "strings",
-            "stringutils",
-            "unlift",
-            "web-dom",
-            "web-events",
-            "web-file",
-            "web-html",
-            "web-touchevents",
-            "web-uievents"
+            "sjablong",
+            "strings"
           ],
           "build_plan": [
             "aff",
@@ -76,6 +66,7 @@
             "record",
             "refs",
             "safe-coerce",
+            "sjablong",
             "st",
             "strings",
             "stringutils",
@@ -652,7 +643,10 @@
       }
     },
     "extra_packages": {
-      "bound": "0.6.0"
+      "sjablong": {
+        "git": "https://github.com/splintersuidman/sjablong.git",
+        "ref": "3a3c5806e86f0ef4773bb853aad36d85cf5efd79"
+      }
     }
   },
   "packages": {
@@ -1283,6 +1277,33 @@
       "integrity": "sha256-a1ibQkiUcbODbLE/WAq7Ttbbh9ex+x33VCQ7GngKudU=",
       "dependencies": [
         "unsafe-coerce"
+      ]
+    },
+    "sjablong": {
+      "type": "git",
+      "url": "https://github.com/splintersuidman/sjablong.git",
+      "rev": "3a3c5806e86f0ef4773bb853aad36d85cf5efd79",
+      "dependencies": [
+        "canvas",
+        "console",
+        "debug",
+        "effect",
+        "foldable-traversable",
+        "numbers",
+        "parsing",
+        "partial",
+        "prelude",
+        "record",
+        "refs",
+        "strings",
+        "stringutils",
+        "unlift",
+        "web-dom",
+        "web-events",
+        "web-file",
+        "web-html",
+        "web-touchevents",
+        "web-uievents"
       ]
     },
     "st": {

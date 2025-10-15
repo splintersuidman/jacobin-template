@@ -7,16 +7,16 @@ import Effect (Effect)
 import Graphics.Canvas (Composite(..), getContext2D) as Canvas
 import Graphics.Canvas (Dimensions, ScaleTransform, TextAlign(..), TextBaseline(..))
 import Partial.Unsafe (unsafePartial)
-import Template.Layer (mkSomeLayer)
-import Template.Layer.Image (mkEmptyImageLayer, mkImageLayer)
-import Template.Layer.Image as ImageLayer
-import Template.Layer.Layers (mkLayers)
-import Template.Layer.Rectangle (mkRectangleLayer)
-import Template.Layer.Ref (mkRefLayer)
-import Template.Layer.Text.Markup (MarkupTextLayer(..))
-import Template.Layer.Text.Markup as Markup
-import Template.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal)
-import Template.Main (addEventListeners, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
+import Sjablong.Layer (mkSomeLayer)
+import Sjablong.Layer.Image (mkEmptyImageLayer, mkImageLayer)
+import Sjablong.Layer.Image as ImageLayer
+import Sjablong.Layer.Layers (mkLayers)
+import Sjablong.Layer.Rectangle (mkRectangleLayer)
+import Sjablong.Layer.Ref (mkRefLayer)
+import Sjablong.Layer.Text.Markup (MarkupTextLayer(..))
+import Sjablong.Layer.Text.Markup as Markup
+import Sjablong.Layer.Undraggable (mkUndraggable, mkUndraggableHorizontal)
+import Sjablong.Main (addEventListeners, connectObjectUrlInput, connectScaleRange, connectTextAreaPure, mkDownloadButton, mkTemplate, mkTemplateContext, redraw)
 
 instagramDimensions :: Dimensions
 instagramDimensions = { width: 1080.0, height: 1080.0 * 5.0 / 4.0 }
