@@ -11,7 +11,7 @@ import Partial.Unsafe (unsafePartial)
 import Sjablong.Layer (mkSomeLayer)
 import Sjablong.Layer.Image (mkEmptyImageLayer, mkImageLayer)
 import Sjablong.Layer.Image as ImageLayer
-import Sjablong.Layer.Layers (mkLayers)
+import Sjablong.Layer.Layers (mkSomeLayers)
 import Sjablong.Layer.Rectangle (mkRectangleLayer)
 import Sjablong.Layer.Ref (mkRefLayer)
 import Sjablong.Layer.Text (TextLayer(..), setText)
@@ -84,7 +84,7 @@ main = void $ unsafePartial do
   authorLayer <- mkRefLayer $ TextLayer
     { text: "AUTEUR"
     , lineHeight: 0.95
-    , position: { x: 60.0 * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
+    , position: { x: 60.0 * templateResolution, y: templateHeight - (60.0 + 100.0 + 10.0) * templateResolution }
     , fillStyle: "#f00"
     , fontName: "Oswald"
     , fontStyle: "normal"
@@ -122,7 +122,7 @@ main = void $ unsafePartial do
   connectTextAreaPure templateContext "title" titleLayer Markup.setText'
 
   let
-    layers = mkLayers @Effect
+    layers = mkSomeLayers @Effect
       [ mkSomeLayer $ mkUndraggable guillotine
       , mkSomeLayer $ mkUndraggable logo
       , mkSomeLayer $ mkUndraggable authorLayer

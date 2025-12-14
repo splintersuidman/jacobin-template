@@ -13,10 +13,10 @@ import Graphics.Canvas (Dimensions, ScaleTransform, TextAlign(..), TextBaseline(
 import Jacobin.Layer.OverlayBackground (OverlayBackgroundLayer(..), mkOverlayBackgroundLayer)
 import Partial.Unsafe (unsafePartial)
 import Sjablong.Layer (class Layer, Point, containsPoint, dragEnd, dragStart, dragTranslateMaybe, draw, mkSomeLayer, position, translate)
-import Sjablong.Layer.Group (mkGroup)
+import Sjablong.Layer.Group (mkSomeGroup)
 import Sjablong.Layer.Image (ImageLayer(..), mkEmptyImageLayer, mkImageLayer)
 import Sjablong.Layer.Image as ImageLayer
-import Sjablong.Layer.Layers (mkLayers)
+import Sjablong.Layer.Layers (mkSomeLayers)
 import Sjablong.Layer.Passthrough (mkPassthrough)
 import Sjablong.Layer.Rectangle (mkRectangleLayer)
 import Sjablong.Layer.Ref (RefLayer, mkRefLayer)
@@ -208,7 +208,7 @@ titleSlide = void $ unsafePartial do
   bigTitleLayer <- mkRefLayer $ MarkupTextLayer
     { text: []
     , lineHeight: 0.9
-    , position: bigTitleAndAuthorPosition
+    , position: { x: bigTitleAndAuthorPosition.x, y: bigTitleAndAuthorPosition.y - 15.0 * templateResolution }
     , maxWidth: Just $ templateWidth / 2.0 - 2.0 * 60.0 * templateResolution
     , fillStyle: "#fff"
     , font:
@@ -247,12 +247,12 @@ titleSlide = void $ unsafePartial do
 
   let
     bigTitleAndAuthorLayer = mkSnapVertical bigTitleAndAuthorPosition.y (50.0 * templateResolution)
-      $ mkGroup @Effect [ mkSomeLayer bigTitleLayer, mkSomeLayer bigAuthorLayer ]
+      $ mkSomeGroup @Effect [ mkSomeLayer bigTitleLayer, mkSomeLayer bigAuthorLayer ]
 
   smallAuthorLayer <- mkRefLayer $ TextLayer
     { text: "AUTEUR"
     , lineHeight: 0.95
-    , position: { x: templateWidth / 2.0 + 128.0 * templateResolution, y: templateHeight - (60.0 + 100.0) * templateResolution }
+    , position: { x: templateWidth / 2.0 + 128.0 * templateResolution, y: templateHeight - (60.0 + 100.0 + 10.0) * templateResolution }
     , fillStyle: "#f00"
     , fontName: "Oswald"
     , fontStyle: "normal"
@@ -320,7 +320,7 @@ titleSlide = void $ unsafePartial do
   let shadowColor = "#555"
   leftSlide <- mkRefLayer
     $ mkShadow { offsetX: 0.0, offsetY: 0.0 } shadowColor 15.0
-    $ mkLayers @Effect
+    $ mkSomeLayers @Effect
         [ mkSomeLayer $ mkUndraggable logoWhite
         , mkSomeLayer $ mkUndraggableHorizontal bigTitleAndAuthorLayer
         , mkSomeLayer $ mkUndraggable guillotineWhite
@@ -329,7 +329,7 @@ titleSlide = void $ unsafePartial do
     if on then shadowColor else "#0000"
 
   let
-    layers = mkLayers @Effect
+    layers = mkSomeLayers @Effect
       [ mkSomeLayer $ mkUndraggable logoRed
       , mkSomeLayer $ mkUndraggableVertical overlayLayer
       , mkSomeLayer leftSlide
@@ -375,7 +375,7 @@ story = void $ unsafePartial do
   titleLayer <- mkRefLayer $ MarkupTextLayer
     { text: []
     , lineHeight: 0.9
-    , position: titleAndAuthorPosition
+    , position: { x: titleAndAuthorPosition.x, y: titleAndAuthorPosition.y - 15.0 * templateResolution }
     , maxWidth: Just $ storyTemplateWidth - 2.0 * 60.0 * templateResolution
     , fillStyle: "#fff"
     , font:
@@ -426,7 +426,7 @@ story = void $ unsafePartial do
     _ -> ImageLayer.loadImage "./img/guillotinewit2x.png"
 
   let
-    titleAndAuthorLayer = mkSnapVertical titleAndAuthorPosition.y (50.0 * templateResolution) $ mkGroup @Effect
+    titleAndAuthorLayer = mkSnapVertical titleAndAuthorPosition.y (50.0 * templateResolution) $ mkSomeGroup @Effect
       [ mkSomeLayer titleLayer
       , mkSomeLayer authorLayer
       ]
@@ -434,7 +434,7 @@ story = void $ unsafePartial do
   let shadowColor = "#555"
   foregroundElements <- mkRefLayer
     $ mkShadow { offsetX: 0.0, offsetY: 0.0 } shadowColor 15.0
-    $ mkLayers @Effect
+    $ mkSomeLayers @Effect
         [ mkSomeLayer $ mkUndraggable logo
         , mkSomeLayer $ mkUndraggableHorizontal titleAndAuthorLayer
         , mkSomeLayer $ mkUndraggable guillotine
@@ -443,7 +443,7 @@ story = void $ unsafePartial do
     if on then shadowColor else "#0000"
 
   let
-    layers = mkLayers @Effect
+    layers = mkSomeLayers @Effect
       [ mkSomeLayer foregroundElements
       , mkSomeLayer $ mkPassthrough $ mkUndraggable overlay
       , mkSomeLayer backgroundImageLayer

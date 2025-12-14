@@ -10,7 +10,7 @@ import Partial.Unsafe (unsafePartial)
 import Sjablong.Layer (mkSomeLayer)
 import Sjablong.Layer.Image (mkEmptyImageLayer, mkImageLayer)
 import Sjablong.Layer.Image as ImageLayer
-import Sjablong.Layer.Layers (mkLayers)
+import Sjablong.Layer.Layers (mkSomeLayers)
 import Sjablong.Layer.Rectangle (mkRectangleLayer)
 import Sjablong.Layer.Ref (mkRefLayer)
 import Sjablong.Layer.Text.Markup (MarkupTextLayer(..))
@@ -100,7 +100,7 @@ main = void $ unsafePartial do
   connectTextAreaPure templateContext "text-below" textBelowLayer Markup.setText'
 
   let
-    layers = mkLayers @Effect
+    layers = mkSomeLayers @Effect
       [ mkSomeLayer $ mkUndraggable guillotine
       , mkSomeLayer $ mkUndraggable logo
       , mkSomeLayer $ mkUndraggableHorizontal textAboveLayer

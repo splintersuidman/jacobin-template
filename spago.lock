@@ -645,7 +645,7 @@
     "extra_packages": {
       "sjablong": {
         "git": "https://github.com/splintersuidman/sjablong.git",
-        "ref": "3a3c5806e86f0ef4773bb853aad36d85cf5efd79"
+        "ref": "72dbadd81549585b2097580efce21149094374df"
       }
     }
   },
@@ -1282,7 +1282,7 @@
     "sjablong": {
       "type": "git",
       "url": "https://github.com/splintersuidman/sjablong.git",
-      "rev": "3a3c5806e86f0ef4773bb853aad36d85cf5efd79",
+      "rev": "72dbadd81549585b2097580efce21149094374df",
       "dependencies": [
         "canvas",
         "console",
